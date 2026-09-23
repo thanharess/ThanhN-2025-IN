@@ -1,0 +1,398 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Đổi TargetFramework sang net8.0-windows -->
+    <TargetFramework>net8.0-windows8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <StartupObject>ToolInventor2025.</StartupObject>
+    <MyType>WindowsFormsWithCustomSubMain</MyType>
+    <PublishUrl>http://localhost/InventorAddIn/</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Web</InstallFrom>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>true</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    
+    <!-- Kích hoạt Windows Forms cho .NET 8 -->
+    <UseWindowsForms>true</UseWindowsForms>
+    
+    <RootNamespace>ToolInventor2025</RootNamespace>
+    <AssemblyName>ToolInventor2025</AssemblyName>
+    <AssemblyTitle>Tool_Inventor_2025</AssemblyTitle>
+    <Description>Tool_Inventor_2025</Description>
+    <Company>Autodesk, Inc.</Company>
+    <Product>Autodesk Inventor</Product>
+    <Copyright>Copyright %3f2012 Autodesk, Inc.</Copyright>
+    <AssemblyVersion>1.0.%2a</AssemblyVersion>
+    
+    <ImportedNamespaces>Autodesk.iLogic.Interfaces=False,Autodesk.iLogic.Runtime=False,Autodesk.iLogic.Runtime.InventorEntities=False,form=False,Inventor=False,stdole=False,System.Text=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,Tool Inventor 2025=True</ImportedNamespaces>
+    
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>C:\ProgramData\Autodesk\Inventor 2025\Addins</OutputPath>
+    <DocumentationFile>.xml</DocumentationFile>
+    <NoWarn>42016,42017,42018,42019,42032,42353,42354,42355</NoWarn>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutputPath>C:\ProgramData\Autodesk\Inventor 2025\Addins</OutputPath>
+    <DocumentationFile>.xml</DocumentationFile>
+    <NoWarn>42016,42017,42018,42019,42032,42353,42354,42355</NoWarn>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  
+  
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>C:\ProgramData\Autodesk\Inventor 2025\Addins</OutputPath>
+    <DocumentationFile>.xml</DocumentationFile>
+    <DefineDebug>false</DefineDebug>
+    <NoWarn>42016,42017,42018,42019,42032,42353,42354,42355</NoWarn>
+    <DebugType>none</DebugType>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutputPath>C:\ProgramData\Autodesk\Inventor 2025\Addins</OutputPath>
+    <DocumentationFile>.xml</DocumentationFile>
+    <DefineDebug>false</DefineDebug>
+    <NoWarn>42016,42017,42018,42019,42032,42353,42354,42355</NoWarn>
+    <DebugType>none</DebugType>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+<PropertyGroup>
+  <TargetFramework>net8.0-windows</TargetFramework>
+  <UseWindowsForms>true</UseWindowsForms>
+
+  <NoWarn>$(NoWarn);CA1416</NoWarn>
+</PropertyGroup>
+  
+  <ItemGroup>
+    <Content Include="Code addin inventor\Item addin\Màu sắc 1.adsklib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Autodesk.ToolInventor2020.Inventor.addin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Code addin inventor\Part\Buttons\Sheetmetal\" />
+    <Folder Include="Code addin inventor\Skill Auto\Assembly\" />
+    <Folder Include="Code addin inventor\Skill Auto\Drawing\" />
+    <Folder Include="Code addin inventor\Skill Auto\Part\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Code addin inventor\Images\Assembly\i19 1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\i19.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\note.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\repair.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\test.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Drawing\design.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i1 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i10 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i10.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i11 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i11.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i12 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i12.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i13 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i13.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i14 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i14.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i15 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i15.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i16 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i16.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i17 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i17.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\i18 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\i18.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i19 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i19.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i2 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i2.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i20 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i20.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i21 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i21.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i22 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i22.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i23 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i23.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i24 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i24.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i25 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i25.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i26 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i26.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i27 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i27.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i28 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i28.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i29 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i29.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i3 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i3.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\i30 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\i30.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i31 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i31.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i32 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i32.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i33 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i33.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Drawing\i34 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Drawing\i34.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i35 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i35.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i36 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i36.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i37 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i37.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i38 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i38.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\i39 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Assembly\i39.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i4 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i4.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i5 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i5.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i6 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i6.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i7 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i7.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i8 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i8.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i9 1.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Code addin inventor\Images\Part\i9.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  
+  
+  <ItemGroup>
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Autodesk.iLogic.Interfaces">
+      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.iLogic.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Autodesk.iLogic.Runtime">
+      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.iLogic.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Autodesk.Inventor.Interop">
+      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.Inventor.Interop.dll</HintPath>
+      <Private>True</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="stdole">
+      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\stdole.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Import Include="Autodesk.iLogic.Interfaces" />
+    <Import Include="Autodesk.iLogic.Runtime" />
+    <Import Include="Autodesk.iLogic.Runtime.InventorEntities" />
+    <Import Include="form" />
+    <Import Include="Inventor" />
+    <Import Include="stdole" />
+    <Import Include="System.Text" />
+  </ItemGroup>
+
+  
+</Project>

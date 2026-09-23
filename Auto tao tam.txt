@@ -1,0 +1,195 @@
+﻿Public Sub Main()
+	ThisApplication.DisplayOptions.ViewTransitionTime = "0"
+	ThisApplication.DisplayOptions.MinimumFrameRate = "0"
+	ThisApplication.DisplayOptions.DisplayQuality = "smoother"
+	Dim i As Long
+	Dim staaad As Integer = 0
+	Dim Quydoi As Double
+	'Create File Open Dialogue
+	myparam = InputBox("file part", "folder", "C:\Users\thanh\Desktop\New folder (2)")
+	If myparam = "" Then
+		Exit Sub
+	End If
+	oDoc = ThisDoc.Document
+	Dim oFileDlg As Inventor.FileDialog = Nothing
+	InventorVb.Application.CreateFileDialog(oFileDlg)
+	oFileDlg.Filter = "Excel (*.xls) (*.xlsx)|*.xls ;*.xlsx"
+	oFileDlg.InitialDirectory = ThisApplication.DesignProjectManager.ActiveDesignProject.WorkspacePath
+	'Show File Open Dialogue
+	oFileDlg.ShowOpen()
+	ClintBrown3D = oFileDlg.FileName
+	If ClintBrown3D = "" Then : Return : End If
+	'oFileDlg.Open
+	Dim cdcd As Double
+	Dim crcr As Double
+	Dim cdaycday As Double
+	Dim thongtin As String
+	Dim PL As String
+	Dim vlvl As String
+	For i = 3 To 10 Step 1
+		PL = GoExcel.CellValue(ClintBrown3D, "bth", "b" & i)
+		SLSLSl = GoExcel.CellValue(ClintBrown3D, "bth", "c" & i)
+		cdcd = GoExcel.CellValue(ClintBrown3D, "bth", "d" & i)
+		crcr = GoExcel.CellValue(ClintBrown3D, "bth", "e" & i)
+		cdaycday = GoExcel.CellValue(ClintBrown3D, "bth", "f" & i)
+		thongtin = GoExcel.CellValue(ClintBrown3D, "bth", "g" & i)
+		vlvl = GoExcel.CellValue(ClintBrown3D, "bth", "h" & i)
+		ten = GoExcel.CellValue(ClintBrown3D, "bth", "j" & i)
+		If thongtin = "mm" Then
+			Quydoi = 10
+		ElseIf thongtin = "cm" Then
+			Quydoi = 1
+			'cdcd = cdcd * 10
+			'crcr = crcr * 10
+		ElseIf thongtin = "m" Then
+			Quydoi = 0.01
+			'cdcd = cdcd * 1000
+			'crcr = crcr * 1000
+		End If
+		If cdcd = 0 Or SLSLSl = 0 Then
+			Exit For
+		End If
+		' Create a new sheet metal document, using the default sheet metal template.
+		Dim oSheetMetalDoc As PartDocument
+		oSheetMetalDoc = ThisApplication.Documents.Add(kPartDocumentObject, _
+		ThisApplication.FileManager.GetTemplateFile(kPartDocumentObject, , , "{9C464203-9BAE-11D3-8BAD-0060B0CE6BB4}"), True)
+		'  a reference to the component definition.
+		Dim oCompDef As SheetMetalComponentDefinition
+		oCompDef = oSheetMetalDoc.ComponentDefinition
+		'  a reference to the sheet metal features collection.
+		Dim oSheetMetalFeatures As SheetMetalFeatures
+		oSheetMetalFeatures = oCompDef.Features
+		' Create a new sketch on the X-Y work plane.
+		Dim oSketch As PlanarSketch
+		oSketch = oCompDef.Sketches.Add(oCompDef.WorkPlanes.Item(3))
+		'  a reference to the transient geometry object.
+
+		Dim oPartDoc As PartDocument
+		oPartDoc = ThisApplication.ActiveEditDocument
+		' Get the sheet metal component definition. Because this is a part document whose
+		Dim oSheetMetalCompDef As SheetMetalComponentDefinition
+		oSheetMetalCompDef = oPartDoc.ComponentDefinition
+		' Override the thickness for the document
+		oSheetMetalCompDef.UseSheetMetalStyleThickness = False
+		' Get a reference to the parameter controlling the thickness.
+		Dim oThicknessParam As Parameter
+		oThicknessParam = oSheetMetalCompDef.Thickness
+		' Change the value of the parameter.
+		oThicknessParam.Value = cdaycday / Quydoi
+
+		If PL = "HT" Then
+			' Draw rectangles by center point.
+			Dim dkkk As SketchCircle
+			dkkk = oSketch.SketchCircles.AddByCenterRadius(ThisApplication.TransientGeometry.CreatePoint2d(0, 0), cdcd / (2 * Quydoi))
+			Dim arcConstraint As DiameterDimConstraint
+			arcConstraint = oSketch.DimensionConstraints.AddDiameter(dkkk, ThisApplication.TransientGeometry.CreatePoint2d(-0.5 / Quydoi, -0.5 / Quydoi))
+			Dim oProfile As Profile
+			oProfile = oSketch.Profiles.AddForSolid
+			Dim oFaceFeatureDefinition As FaceFeatureDefinition
+			oFaceFeatureDefinition = oSheetMetalFeatures.FaceFeatures.CreateFaceFeatureDefinition(oProfile)
+			' Create a face feature.
+			Dim oFaceFeature As FaceFeature
+			oFaceFeature = oSheetMetalFeatures.FaceFeatures.Add(oFaceFeatureDefinition)
+
+			If crcr <> 0 Then
+				Dim oCutDefinition As CutDefinition
+				'oSketch = oCompDef.Sketches.Add(oCompDef.WorkPlanes.Item(3))
+				Dim oFrontFace As Face
+				oFrontFace = oFaceFeature.Faces.Item(3)
+				' control the orientation and orgin of the new sketch.
+				oSketch = oCompDef.Sketches.AddWithOrientation(oFrontFace, _
+				oCompDef.WorkAxes.Item(1), True, True, oCompDef.WorkPoints(1))
+				dkkk = oSketch.SketchCircles.AddByCenterRadius(ThisApplication.TransientGeometry.CreatePoint2d(0, 0), crcr / (2 * Quydoi))
+				arcConstraint = oSketch.DimensionConstraints.AddDiameter(dkkk, ThisApplication.TransientGeometry.CreatePoint2d(-0.5 / Quydoi, -0.5 / Quydoi))
+				oProfile = oSketch.Profiles.AddForSolid
+				oCutDefinition = oSheetMetalFeatures.CutFeatures.CreateCutDefinition(oProfile)
+				oSheetMetalFeatures.CutFeatures.Add(oCutDefinition)
+			End If
+		ElseIf PL = "HCN" Then
+			'  a reference to the transient geometry object.
+			Dim oTransGeom As TransientGeometry
+			oTransGeom = ThisApplication.TransientGeometry
+			' Draw rectangles by center point.
+			Dim tg As TransientGeometry
+			tg = ThisApplication.TransientGeometry
+			Dim rectangleLines As SketchEntitiesEnumerator
+			rectangleLines = oSketch.SketchLines.AddAsTwoPointCenteredRectangle(ThisApplication.TransientGeometry.CreatePoint2d(0, 0), ThisApplication.TransientGeometry.CreatePoint2d(cdcd / (2 * Quydoi), crcr / (2 * Quydoi)))
+			Dim recSketchLine As SketchLine
+			recSketchLine = rectangleLines.Item(1)
+			oSketch.DimensionConstraints.AddTwoPointDistance(recSketchLine.StartSketchPoint, recSketchLine.EndSketchPoint, DimensionOrientationEnum.kHorizontalDim, ThisApplication.TransientGeometry.CreatePoint2d(0, -crcr / (2 * Quydoi) -3 / Quydoi))
+			recSketchLine2 = rectangleLines.Item(4)
+			oSketch.DimensionConstraints.AddTwoPointDistance(recSketchLine2.StartSketchPoint, recSketchLine2.EndSketchPoint, DimensionOrientationEnum.kVerticalDim, ThisApplication.TransientGeometry.CreatePoint2d(-cdcd / (2 * Quydoi) -3 / Quydoi, 0))
+			' Create a profile.
+			Dim oProfile As Profile
+			oProfile = oSketch.Profiles.AddForSolid
+			Dim oFaceFeatureDefinition As FaceFeatureDefinition
+			oFaceFeatureDefinition = oSheetMetalFeatures.FaceFeatures.CreateFaceFeatureDefinition(oProfile)
+			' Create a face feature.
+			Dim oFaceFeature As FaceFeature
+			oFaceFeature = oSheetMetalFeatures.FaceFeatures.Add(oFaceFeatureDefinition)
+		Else
+			Dim oTransGeom As TransientGeometry
+			oTransGeom = ThisApplication.TransientGeometry
+			' Draw rectangles by center point.
+			Dim tg As TransientGeometry
+			tg = ThisApplication.TransientGeometry
+			Dim rectangleLines As SketchEntitiesEnumerator
+			rectangleLines = oSketch.SketchLines.AddAsTwoPointCenteredRectangle(ThisApplication.TransientGeometry.CreatePoint2d(0, 0), ThisApplication.TransientGeometry.CreatePoint2d(cdcd / (2 * Quydoi), crcr / (2 * Quydoi)))
+			Dim recSketchLine As SketchLine
+			recSketchLine = rectangleLines.Item(1)
+			oSketch.DimensionConstraints.AddTwoPointDistance(recSketchLine.StartSketchPoint, recSketchLine.EndSketchPoint, DimensionOrientationEnum.kHorizontalDim, ThisApplication.TransientGeometry.CreatePoint2d(0, -crcr / (2 * Quydoi) -3 / Quydoi))
+			recSketchLine2 = rectangleLines.Item(4)
+			oSketch.DimensionConstraints.AddTwoPointDistance(recSketchLine2.StartSketchPoint, recSketchLine2.EndSketchPoint, DimensionOrientationEnum.kVerticalDim, ThisApplication.TransientGeometry.CreatePoint2d(-cdcd / (2 * Quydoi) -3 / Quydoi, 0))
+			' Create a profile.
+			Dim oProfile As Profile
+			oProfile = oSketch.Profiles.AddForSolid
+			Dim oFaceFeatureDefinition As FaceFeatureDefinition
+			oFaceFeatureDefinition = oSheetMetalFeatures.FaceFeatures.CreateFaceFeatureDefinition(oProfile)
+			' Create a face feature.
+			Dim oFaceFeature As FaceFeature
+			oFaceFeature = oSheetMetalFeatures.FaceFeatures.Add(oFaceFeatureDefinition)
+
+		End If
+
+		oSheetMetalCompDef.Unfold()
+		oCompDef.FlatPattern.ExitEdit
+
+		oDoc = ThisDoc.Document :'define the active document
+		'Dim oFileDlg As Inventor.FileDialog = Nothing :'create a file dialog box
+		InventorVb.Application.CreateFileDialog(oFileDlg) :'check file type and set dialog filter
+		If oDoc.DocumentType = kPartDocumentObject Then
+			oFileDlg.Filter = "Autodesk Inventor Part Files (*.ipt)|*.ipt"
+		End If
+		oFileDlg.InitialDirectory = myparam'ThisDoc.WorkspacePath() :'set the directory to open the dialog at
+		'set the file name string to use in the input box
+		oFileDlg.FileName = cdcd & "x" & crcr' ThisDoc.FileName(False) 'without extension
+		'work with an error created by the user backing out of the save 
+		oFileDlg.CancelError = True
+		On Error Resume Next
+		'specify the file dialog as a save dialog (rather than a open dialog)
+		If Err.Number <> 0 Then
+			'MessageBox.Show("No File Saved.", "iLogic: Dialog Canceled")
+		ElseIf oFileDlg.FileName <> "" Then
+			MyFile = cdcd & "x" & crcr & "x" & cdcd
+			If PL = "HT" Then
+				MyFile = cdcd & "x" & crcr
+			ElseIf PL = "HCN" Then
+				MyFile = cdcd & "x" & crcr & "x" & cdcd
+			ElseIf PL = "TG" Then
+				MyFile = cdcd & "x" & crcr & "x" & cdcd
+			End If
+			If ten <> "" Then
+				MyFile = ten & " " & MyFile
+			End If
+			oSheetMetalDoc.iProperties.Material = "rubber"
+			oSheetMetalDoc.SaveAs(myparam & "\" & MyFile & ".ipt", False)
+			'oDrawDoc = ThisApplication.Documents.Open(myparam & "\" & MyFile & ".ipt", True)
+		End If
+		oSheetMetalDoc.Close
+	Next
+	ThisApplication.Documents.Add(kAssemblyDocumentObject, , True)
+	ThisApplication.DisplayOptions.ViewTransitionTime = "0,41"
+	ThisApplication.DisplayOptions.MinimumFrameRate = "11,23"
+	ThisApplication.DisplayOptions.DisplayQuality = "medium"
+	ThisApplication.ActiveEditDocument.Update
+End Sub

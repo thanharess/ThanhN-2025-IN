@@ -1,0 +1,11 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Solution Items/" />
+  <Project Path="Tool Inventor 2025.vbproj" Id="e3133b87-5830-4eca-a611-be8cabd0d3ef">
+    <BuildType Solution="Debug|Any CPU" Project="Release" />
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+</Solution>

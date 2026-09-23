@@ -1,0 +1,14 @@
+<Addin Type="Standard">
+  <!--Created for Autodesk Inventor Version 24.0-->
+  <ClassId>{27785725-854b-490a-ac86-ab9dad7f3cc5}</ClassId>
+  <ClientId>{27785725-854b-490a-ac86-ab9dad7f3cc5}</ClientId>
+  <DisplayName>ToolInventor2025</DisplayName>
+  <Description>ToolInventor2025</Description>
+  <Assembly>ToolInventor2025.dll</Assembly>
+  <LoadOnStartUp>1</LoadOnStartUp>
+  <UserUnloadable>1</UserUnloadable>
+  <Hidden>0</Hidden>
+  <SupportedSoftwareVersionGreaterThan>23..</SupportedSoftwareVersionGreaterThan>
+  <DataVersion>1</DataVersion>
+  <UserInterfaceVersion>1</UserInterfaceVersion>
+</Addin>
