@@ -75,23 +75,14 @@ Namespace ToolInventor2025.Assembly.Buttons.Lenhngoaicumlap
             Catch
                 lastFolder = ""
             End Try
-<<<<<<< HEAD
             '--- 3. Chọn nhiều file STEP ----------------------------------
-=======
-
-            ' 3. Chọn nhiều file STEP
->>>>>>> c096192 (Add project files.)
             Dim stepFiles As New List(Of String)
             Try
                 Dim stepDlg As Inventor.FileDialog = Nothing
                 invApp.CreateFileDialog(stepDlg)
 
                 stepDlg.DialogTitle = "CHỌN NHIỀU FILE STEP"
-<<<<<<< HEAD
                 stepDlg.Filter = "STEP Files (*.step;*.stp)|*.step;*.stp|All Files (*.*)|*.*"
-=======
-                stepDlg.Filter = "ALL FILE" '"STEP Files (*.step;*.stp)|*.step;*.stp"
->>>>>>> c096192 (Add project files.)
                 stepDlg.MultiSelectEnabled = True
 
                 If lastFolder <> "" AndAlso IO.Directory.Exists(lastFolder) Then
@@ -99,7 +90,6 @@ Namespace ToolInventor2025.Assembly.Buttons.Lenhngoaicumlap
                 End If
 
                 stepDlg.ShowOpen()
-<<<<<<< HEAD
                 If String.IsNullOrEmpty(stepDlg.FileName) Then Exit Sub
 
                 ' ✅ SỬA Ở ĐÂY: Inventor FileDialog không có thuộc tính 'Files'.
@@ -107,36 +97,20 @@ Namespace ToolInventor2025.Assembly.Buttons.Lenhngoaicumlap
                 ' một chuỗi chứa tất cả các file được chọn, phân tách bởi dấu '|'.
                 Dim sp() As String = stepDlg.FileName.Split("|"c)
                 For Each f As String In sp
-=======
-
-                If stepDlg.FileName = "" Then Exit Sub
-
-                Dim selected() As String = stepDlg.FileName.Split("|"c)
-                For Each f As String In selected
->>>>>>> c096192 (Add project files.)
                     If IO.File.Exists(f) Then stepFiles.Add(f)
                 Next
 
                 If stepFiles.Count = 0 Then
-<<<<<<< HEAD
                     MessageBox.Show("Không có file STEP hợp lệ.", "Lỗi",
                                     MessageBoxButtons.OK, MessageBoxIcon.Error)
-=======
-                    MessageBox.Show("Không có file STEP hợp lệ.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
->>>>>>> c096192 (Add project files.)
                     Exit Sub
                 End If
 
                 lastFolder = IO.Path.GetDirectoryName(stepFiles(0))
-<<<<<<< HEAD
 
             Catch ex As Exception
                 MessageBox.Show("Lỗi chọn file STEP: " & ex.Message, "Lỗi",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
-=======
-            Catch ex As Exception
-                MessageBox.Show("Lỗi chọn file STEP: " & ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
->>>>>>> c096192 (Add project files.)
                 Exit Sub
             End Try
 
