@@ -4,7 +4,7 @@ Imports System.Windows.Forms
 Imports Inventor
 Imports Microsoft.Win32
 
-Namespace ToolInventor2025
+Namespace ToolInventor2025d
     <ProgIdAttribute("ToolInventor2025.StandardAddInServer"),
     GuidAttribute("27785725-854b-490a-ac86-ab9dad7f3cc5")>
     Public Class Basecode
@@ -35,7 +35,6 @@ Namespace ToolInventor2025
             ' Initialize AddIn members.
             g_inventorApplication = addInSiteObject.Application
 
-<<<<<<< HEAD
             ' === Khởi tạo Context Menu ===
             ContextMenuManager.Initialize(g_inventorApplication, AddInClientID)
 
@@ -53,8 +52,6 @@ Namespace ToolInventor2025
                 AddressOf ContextMenuActions.RunPlaceConstraint,
                 ContextEnv.Assembly)   ' <-- ĐỔI Ở ĐÂY
             ' === Muốn thêm nút mới? Chỉ cần thêm 1 dòng như trên ===
-=======
->>>>>>> c096192 (Add project files.)
             ' Connect to the user-interface events to handle a ribbon reset.
             m_uievents = g_inventorApplication.UserInterfaceManager.UserInterfaceEvents
 
@@ -104,11 +101,7 @@ Namespace ToolInventor2025
                     End If
                 End If
             Catch ex As Exception
-<<<<<<< HEAD
                 System.Windows.Forms.MessageBox.Show("Lỗi load icon: " & ex.Message)
-=======
-                ' If loading fails, fall back to text-only buttons
->>>>>>> c096192 (Add project files.)
                 largeIcon = Nothing
                 smallIcon = Nothing
             End Try
@@ -142,11 +135,7 @@ Namespace ToolInventor2025
         ' This method is called by Inventor when the AddIn is unloaded. The AddIn will be
         ' unloaded either manually by the user or when the Inventor session is terminated.
         Public Sub Deactivate() Implements Inventor.ApplicationAddInServer.Deactivate
-<<<<<<< HEAD
             ContextMenuManager.Shutdown()
-=======
-
->>>>>>> c096192 (Add project files.)
             ' TODO:  Add ApplicationAddInServer.Deactivate implementation
 
             ' Release objects.
@@ -450,7 +439,6 @@ Public Module Globals
 
     Public NotInheritable Class PictureDispConverter
 
-<<<<<<< HEAD
         <DllImport("OleAut32.dll", EntryPoint:="OleCreatePictureIndirect", ExactSpelling:=True, PreserveSig:=False)>
         Private Shared Function OleCreatePictureIndirect(
     ByVal picdesc As PICTDESC.Bitmap,
@@ -463,14 +451,6 @@ Public Module Globals
     ByVal picdesc As PICTDESC.Icon,
     ByRef iid As System.Guid,
     <MarshalAs(UnmanagedType.Bool)> ByVal fOwn As Boolean) As IPictureDisp
-=======
-        <DllImport("OleAut32.dll", EntryPoint:="OleCreatePictureIndirect",
-               ExactSpelling:=True, PreserveSig:=False)>
-        Private Shared Function OleCreatePictureIndirect(
-        ByRef picdesc As Object,                                     ' ← dòng 1: bỏ AsAny
-        ByRef iid As System.Guid,
-        <MarshalAs(UnmanagedType.Bool)> ByVal fOwn As Boolean) As IPictureDisp   ' ← dòng 2: bỏ stdole.
->>>>>>> c096192 (Add project files.)
         End Function
 
 

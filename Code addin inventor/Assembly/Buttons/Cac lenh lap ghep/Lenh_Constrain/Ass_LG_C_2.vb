@@ -220,16 +220,12 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep.constraint
             End Try
 
         End Sub
-<<<<<<< HEAD
         Public Sub HideWorkFeaturesFromExternal()
             Try
                 HideAllWorkFeatures()
             Catch
             End Try
         End Sub
-=======
-
->>>>>>> c096192 (Add project files.)
 
         '==========================================================
         ' ACTIVE EDIT DOCUMENT
@@ -493,12 +489,8 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep.constraint
 
 
                 If cmd.Contains("CONSTRAINT") OrElse
-<<<<<<< HEAD
                    cmd.Contains("CONSTRAIN") OrElse
                    cmd.Contains("ASSEMBLYINSERT") Then
-=======
-                   cmd.Contains("CONSTRAIN") Then
->>>>>>> c096192 (Add project files.)
 
                     HideAllWorkFeatures()
 

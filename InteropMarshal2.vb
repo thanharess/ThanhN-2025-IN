@@ -16,20 +16,12 @@ Namespace Interop
 
         ' ---- Lấy instance đang chạy của COM object ----
         ' Đổi tên thành GetActiveObjectNative để tránh nhầm với hàm public bên dưới.
-<<<<<<< HEAD
         ' Sửa dòng DllImport này:
         <DllImport("oleaut32.dll", EntryPoint:="GetActiveObject", ExactSpelling:=True, PreserveSig:=True)>
         Private Shared Function GetActiveObjectNative(
     ByRef rclsid As System.Guid,
     ByVal pvReserved As IntPtr,
     <Out> ByRef ppunk As IntPtr) As Integer
-=======
-        <DllImport("oleaut32.dll", ExactSpelling:=True, PreserveSig:=True)>
-        Private Shared Function GetActiveObjectNative(
-            ByRef rclsid As System.Guid,
-            ByVal pvReserved As IntPtr,
-            <Out> ByRef ppunk As IntPtr) As Integer
->>>>>>> c096192 (Add project files.)
         End Function
 
         ''' <summary>
