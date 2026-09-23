@@ -177,7 +177,7 @@ Namespace ToolInventor2025
 
                     If groupList.Count = 0 Then Continue For
 
-                    ' Nếu submenu chỉ có 1 nút → thêm trực tiếp, không cần submenu
+                    ' Nếu submenu chỉ có 1 nút → thêm trực tiếp
                     If groupList.Count = 1 Then
                         Dim btnDef As ButtonDefinition = GetOrCreateButtonDef(controlDefs, groupList(0))
                         If btnDef IsNot Nothing Then
@@ -187,17 +187,21 @@ Namespace ToolInventor2025
                     End If
 
                     Try
-                        Dim groupInternalName As String = "ToolInventor2025_CtxGroup_" & groupName.Replace(" ", "_")
-                        Dim popup As CommandControls = CommandBar.CommandControls
+                        Dim groupInternalName As String = "ToolInventor2025_CtxGroup_" &
+                                          groupName.Replace(" ", "_")
 
-                        Dim popupCtrl As CommandControl = popup.AddPopup(groupName, groupInternalName, _clientId)
+                        ' ⭐ Late binding để tránh warning COM overload
+                        Dim popupObj As Object = CommandBar.CommandControls
+                        Dim popupCtrl As Object = popupObj.AddPopup(
+            groupName, groupInternalName, _clientId)
+                        Dim popupControls As Object = popupCtrl.Controls
 
-                        Dim popupControls As CommandControls = popupCtrl.Controls
                         For Each info In groupList
                             Dim btnDef As ButtonDefinition = GetOrCreateButtonDef(controlDefs, info)
                             If btnDef Is Nothing Then Continue For
                             Try : popupControls.AddButton(btnDef) : Catch : End Try
                         Next
+
                     Catch
                         ' Fallback: thêm trực tiếp vào menu chính
                         For Each info In groupList

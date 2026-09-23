@@ -33,8 +33,7 @@
     <Copyright>Copyright %3f2012 Autodesk, Inc.</Copyright>
     <AssemblyVersion>1.0.%2a</AssemblyVersion>
     
-    <ImportedNamespaces>Autodesk.iLogic.Interfaces=False,Autodesk.iLogic.Runtime=False,Autodesk.iLogic.Runtime.InventorEntities=False,form=False,Inventor=False,stdole=False,System.Text=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,Tool Inventor 2025=True</ImportedNamespaces>
-    
+   
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
@@ -170,6 +169,7 @@
   <None Remove="Code addin inventor\Images\Part\i8.bmp" />
   <None Remove="Code addin inventor\Images\Part\i9 1.bmp" />
   <None Remove="Code addin inventor\Images\Part\i9.bmp" />
+  <None Remove="Code addin inventor\Item addin\Màu sắc 1.adsklib" />
 </ItemGroup>
 <ItemGroup>
   <Content Include="Code addin inventor\Images\Assembly\i18 1.bmp">
@@ -424,6 +424,9 @@
   <Content Include="Code addin inventor\Images\Part\i9.bmp">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </Content>
+  <Content Include="Code addin inventor\Item addin\Màu sắc 1.adsklib">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
 </ItemGroup>
 
   <ItemGroup>
@@ -440,9 +443,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Autodesk.iLogic.Interfaces">
-      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.iLogic.Interfaces.dll</HintPath>
-    </Reference>
     <Reference Include="Autodesk.iLogic.Runtime">
       <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.iLogic.Runtime.dll</HintPath>
     </Reference>
@@ -457,7 +457,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Import Include="Autodesk.iLogic.Interfaces" />
+
     <Import Include="Autodesk.iLogic.Runtime" />
     <Import Include="Autodesk.iLogic.Runtime.InventorEntities" />
     <Import Include="form" />

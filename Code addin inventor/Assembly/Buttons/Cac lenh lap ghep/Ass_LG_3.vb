@@ -25,7 +25,7 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
             ' FORM
             '=====================================================
             Dim frm As New Form()
-            frm.Text = "Ẩn Component - Inventor 2020"
+            frm.Text = "Ẩn Component - Inventor 2025"
             frm.Size = New Size(380, 440)
             frm.StartPosition = FormStartPosition.CenterScreen
             frm.FormBorderStyle = FormBorderStyle.FixedDialog
@@ -92,7 +92,21 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
 
             frm.Controls.AddRange({btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn0})
             frm.ShowDialog()
+            Dim btnDebug As New Button() With {
+    .Text = "DEBUG: Xem SubType",
+    .Location = New System.Drawing.Point(40, 380),
+    .Size = New Size(280, 25),
+    .BackColor = System.Drawing.Color.LightCyan
+}
 
+            AddHandler btnDebug.Click, Sub()
+                                           Dim sb As New System.Text.StringBuilder()
+                                           Dim cnt As Integer = 0
+                                           DebugDumpSubTypes(oDef.Occurrences, sb, cnt)
+                                           MessageBox.Show(sb.ToString(), "Debug SubType (" & cnt & " occ)")
+                                       End Sub
+
+            frm.Controls.Add(btnDebug)
             asmDoc.Update2(True)
 
         End Sub
@@ -257,42 +271,40 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
             End Try
             Return False
         End Function
-
         '=====================================================
         ' 5. PART THƯỜNG
-        ' Điều kiện:  Là PartComponentDefinition
+        ' Điều kiện:  Là PartComponentDefinition (không phải Assembly)
         '          + KHÔNG phải Sheet Metal
-        '          + KHÔNG phải Reference Part
         '          + KHÔNG phải Content Center member
+        '          + KHÔNG phải Reference Part
         '          + BOM không thuộc {Reference, Phantom, Purchased}
         '=====================================================
         Private Function IsPart(ByVal occ As ComponentOccurrence) As Boolean
             If occ Is Nothing Then Return False
 
             Try
-                ' Bỏ qua occurrence đang suppress (tránh exception khi truy cập Definition)
+                ' 0) Bỏ qua occurrence đang suppress
                 If occ.Suppressed Then Return False
 
-                ' 1) Phải là Part (không phải Assembly/IAM)
+                ' 1) Phải là Part document (loại sớm Assembly/IAM — an toàn hơn cast Definition)
+                If occ.DefinitionDocumentType <> DocumentTypeEnum.kPartDocumentObject Then Return False
+
+                ' 2) Phải cast được sang PartComponentDefinition
                 Dim pDef As PartComponentDefinition = TryCast(occ.Definition, PartComponentDefinition)
                 If pDef Is Nothing Then Return False
 
-                ' 2) Loại trừ Sheet Metal (xử lý riêng ở IsSheetMetal)
-                If pDef.IsSheetMetal Then Return False
+                ' 3) Loại trừ Sheet Metal (xử lý riêng ở IsSheetMetal)
+                Dim pDoc As PartDocument = TryCast(occ.Definition.Document, PartDocument)
+                If pDoc IsNot Nothing AndAlso IsSheetMetalDocument(pDoc) Then Return False
 
-                ' 3) Loại trừ Reference Part (part được tạo dạng tham chiếu)
-                If SafeIsReferencePart(pDef) Then Return False
-
-                ' 4) Loại trừ Content Center member (bulông, đai ốc... thư viện chuẩn)
+                ' 4) Loại trừ Content Center member
                 If SafeIsContentMember(occ) Then Return False
 
-                ' 5) Loại trừ theo BOM Structure
-                Select Case occ.BOMStructure
-                    Case BOMStructureEnum.kReferenceBOMStructure,
-                 BOMStructureEnum.kPhantomBOMStructure,
-                 BOMStructureEnum.kPurchasedBOMStructure
-                        Return False
-                End Select
+                ' 5) Loại trừ Reference Part
+                If SafeIsReferencePart(pDef) Then Return False
+
+                ' 6) Loại trừ theo BOM Structure
+                If IsExcludedBOM(occ) Then Return False
 
                 ' Đủ điều kiện = Part thường
                 Return True
@@ -301,49 +313,132 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
                 Return False
             End Try
         End Function
-
         '=====================================================
-        ' 6. SHEET METAL
-        ' Điều kiện:  Là PartComponentDefinition
-        '          + LÀ Sheet Metal
-        '          + KHÔNG phải Reference Part
-        '          + KHÔNG phải Content Center member
-        '          + BOM không thuộc {Reference, Phantom, Purchased}
+        ' 6. SHEET METAL (Inventor 2025 - ổn định)
         '=====================================================
         Private Function IsSheetMetal(ByVal occ As ComponentOccurrence) As Boolean
-            If occ Is Nothing Then Return False
-
+            If occ Is Nothing OrElse occ.Suppressed Then Return False
             Try
-                ' Bỏ qua occurrence đang suppress
-                If occ.Suppressed Then Return False
+                If occ.DefinitionDocumentType <> DocumentTypeEnum.kPartDocumentObject Then Return False
 
-                ' 1) Phải là Part
                 Dim pDef As PartComponentDefinition = TryCast(occ.Definition, PartComponentDefinition)
                 If pDef Is Nothing Then Return False
 
-                ' 2) BẮT BUỘC phải là Sheet Metal — check sớm để tránh truy cập prop khác
-                If Not pDef.IsSheetMetal Then Return False
+                ' Cách chính xác nhất
+                If TypeOf pDef Is SheetMetalComponentDefinition Then
+                    ' Loại trừ Content Center / Reference / BOM đặc biệt
+                    If SafeIsContentMember(occ) Then Return False
+                    If IsExcludedBOM(occ) Then Return False
+                    If SafeIsReferencePart(pDef) Then Return False
+                    Return True
+                End If
 
-                ' 3) Loại trừ Reference Part
-                If SafeIsReferencePart(pDef) Then Return False
+                ' Fallback: SubType GUID
+                Dim pDoc As PartDocument = TryCast(occ.Definition.Document, PartDocument)
+                If pDoc IsNot Nothing AndAlso
+           String.Equals(pDoc.SubType, "{9C464203-9BAE-11D3-8BAD-0060B0CE6BB4}", StringComparison.OrdinalIgnoreCase) Then
+                    If SafeIsContentMember(occ) Then Return False
+                    If IsExcludedBOM(occ) Then Return False
+                    If SafeIsReferencePart(pDef) Then Return False
+                    Return True
+                End If
+            Catch
+            End Try
+            Return False
+        End Function
 
-                ' 4) Loại trừ Content Center member
-                If SafeIsContentMember(occ) Then Return False
+        '=====================================================
+        ' HELPER: nhận diện Sheet Metal trực tiếp từ PartDocument
+        '=====================================================
+        Private Function IsSheetMetalDocument(ByVal pDoc As PartDocument) As Boolean
+            If pDoc Is Nothing Then Return False
 
-                ' 5) Loại trừ theo BOM Structure
+            ' --- Cách 1 (chắc nhất): property IsSheetMetal trên ComponentDefinition ---
+            Try
+                If pDoc.ComponentDefinition IsNot Nothing AndAlso pDoc.ComponentDefinition.IsSheetMetal Then
+                    Return True
+                End If
+            Catch
+            End Try
+
+            ' --- Cách 2: cast ComponentDefinition sang SheetMetalComponentDefinition ---
+            Try
+                Dim smDef As SheetMetalComponentDefinition =
+            TryCast(pDoc.ComponentDefinition, SheetMetalComponentDefinition)
+                If smDef IsNot Nothing Then Return True
+            Catch
+            End Try
+
+            ' --- Cách 3: SubType (chỉ dùng khi 2 cách trên fail) ---
+            '   Lưu ý: GUID dưới đây có thể khác trên máy bạn — xem mục "Cách tự tìm GUID đúng"
+            Try
+                If String.Equals(pDoc.SubType, SHEETMETAL_SUBTYPE_GUID,
+                         StringComparison.OrdinalIgnoreCase) Then
+                    Return True
+                End If
+            Catch
+            End Try
+
+            Return False
+        End Function
+
+        '=====================================================
+        ' HELPERS DÙNG CHUNG CHO PHẦN 5 & 6
+        '=====================================================
+
+        '=====================================================
+        ' HELPER: nhận diện Sheet Metal bằng 3 lớp kiểm tra
+        '=====================================================
+        Private Const SHEETMETAL_SUBTYPE_GUID As String = "{9C464203-9BAE-11D3-8BAD-0060B0CE6BB4}"
+
+        Private Function IsSheetMetalDefinition(ByVal pDef As PartComponentDefinition, ByVal occ As ComponentOccurrence) As Boolean
+            If pDef Is Nothing Then Return False
+
+            ' --- Lớp 1: property IsSheetMetal (nhanh, nhưng đôi khi sai) ---
+            Try
+                If pDef.IsSheetMetal Then Return True
+            Catch
+            End Try
+
+            ' --- Lớp 2: TypeOf (chính xác hơn, nhưng fail với derived/mirror) ---
+            Try
+                If TypeOf pDef Is SheetMetalComponentDefinition Then Return True
+            Catch
+            End Try
+
+            ' --- Lớp 3: SubType GUID của PartDocument (đáng tin nhất) ---
+            If occ IsNot Nothing Then
+                Try
+                    Dim pDoc As PartDocument = TryCast(occ.Definition.Document, PartDocument)
+                    If pDoc IsNot Nothing Then
+                        If String.Equals(pDoc.SubType, SHEETMETAL_SUBTYPE_GUID,
+                                 StringComparison.OrdinalIgnoreCase) Then
+                            Return True
+                        End If
+                    End If
+                Catch
+                End Try
+            End If
+
+            Return False
+        End Function
+
+        ''' <summary>
+        ''' Trả về True nếu BOM Structure thuộc nhóm cần loại trừ
+        ''' (Reference / Phantom / Purchased).
+        ''' </summary>
+        Private Function IsExcludedBOM(ByVal occ As ComponentOccurrence) As Boolean
+            If occ Is Nothing Then Return False
+            Try
                 Select Case occ.BOMStructure
                     Case BOMStructureEnum.kReferenceBOMStructure,
                  BOMStructureEnum.kPhantomBOMStructure,
                  BOMStructureEnum.kPurchasedBOMStructure
-                        Return False
+                        Return True
                 End Select
-
-                ' Đủ điều kiện = Sheet Metal
-                Return True
-
             Catch
-                Return False
             End Try
+            Return False
         End Function
 
         '=====================================================
@@ -367,5 +462,29 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
                 Return False
             End Try
         End Function
+        Private Sub DebugDumpSubTypes(ByVal occs As ComponentOccurrences,
+                              ByVal sb As System.Text.StringBuilder,
+                              ByRef cnt As Integer)
+            For Each occ As ComponentOccurrence In occs
+                Try
+                    Dim doc As Document = occ.Definition.Document
+                    Dim pDoc As PartDocument = TryCast(doc, PartDocument)
+                    Dim subType As String = "(n/a)"
+                    Dim isSM As String = "?"
+                    If pDoc IsNot Nothing Then
+                        Try : subType = pDoc.SubType : Catch : End Try
+                        Try : isSM = pDoc.ComponentDefinition.IsSheetMetal.ToString() : Catch : End Try
+                    End If
+                    sb.AppendLine(occ.Name & " | SM=" & isSM & " | SubType=" & subType)
+                    cnt += 1
+
+                    If occ.DefinitionDocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
+                        Dim subDef As AssemblyComponentDefinition = CType(occ.Definition, AssemblyComponentDefinition)
+                        DebugDumpSubTypes(subDef.Occurrences, sb, cnt)
+                    End If
+                Catch
+                End Try
+            Next
+        End Sub
     End Module
 End Namespace

@@ -53,7 +53,7 @@ Namespace ToolInventor2025.Assembly.Buttons.Part
                 form.Tag = 0
                 AddMenuButton(form, "Đổi đơn vị Part", 45, 1) 'ok
                 AddMenuButton(form, "Đổi vật liệu từ generic thành steel Part", 95, 2) 'ok
-                AddMenuButton(form, "Xoá màu ghi đè lên part", 145, 3) 'ok
+                AddMenuButton(form, "Xoá màu ghi đè lên part", 145, 3) ' chưa ok
                 AddMenuButton(form, "Thay màu part", 195, 4) 'ok
                 AddMenuButton(form, "Thông số part", 245, 5) 'ok
                 'AddMenuButton(form, "All lever Bóc tách số lượng tổng tấm lọc part", 295, 6) ' ok
