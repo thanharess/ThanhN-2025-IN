@@ -38,19 +38,18 @@ Namespace ToolInventor2025
             ' === Khởi tạo Context Menu ===
             ContextMenuManager.Initialize(g_inventorApplication, AddInClientID)
 
-            ContextMenuManager.RegisterButton(
-                "Hiện Planes/Axes để Constrain",
-                "ToolInventor2025_Context_ShowPlanes",
-                "Hiện Work Planes & Axes cho các chi tiết được chọn để Constrain",
-                AddressOf ToolInventor2025.Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_2.OnExecute,
-                ContextEnv.Assembly)   ' <-- ĐỔI Ở ĐÂY
-
+            ' ── Nút "Hiện Planes/Axes" — luôn hiện ──
+            ' ── CHỈ đăng ký "Place Constraint" ──
+            ' Nút "Hiện Planes/Axes" đã có sẵn trên Ribbon (Btn16 - "Hiện gốc tọa độ để Constrain")
+            ' Không cần thêm vào context menu nữa.
             ContextMenuManager.RegisterButton(
                 "Place Constraint",
                 "ToolInventor2025_Context_Constraint",
                 "Mở hộp thoại Place Constraint",
                 AddressOf ContextMenuActions.RunPlaceConstraint,
-                ContextEnv.Assembly)   ' <-- ĐỔI Ở ĐÂY
+                ContextEnv.Assembly,
+                "",
+                True)   ' onlyWhenPlanesVisible = True
             ' === Muốn thêm nút mới? Chỉ cần thêm 1 dòng như trên ===
             ' Connect to the user-interface events to handle a ribbon reset.
             m_uievents = g_inventorApplication.UserInterfaceManager.UserInterfaceEvents

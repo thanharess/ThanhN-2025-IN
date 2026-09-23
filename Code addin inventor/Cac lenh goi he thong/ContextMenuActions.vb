@@ -19,21 +19,21 @@ Namespace ToolInventor2025
                 Dim cmd As ControlDefinition = FindConstrainCommand()
                 If cmd Is Nothing Then
                     MessageBox.Show("Không tìm thấy lệnh Constrain trong Inventor.",
-                                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     Return
                 End If
 
-                ' ── Chỉ cần chạy lệnh Constrain ─────────────────────
-                ' Việc ẩn Planes/Axes sẽ do sự kiện OnTerminateCommand
-                ' trong module Ass_LG_C_2 tự xử lý (đã có sẵn).
+                ' Chạy lệnh Constrain
                 cmd.Execute()
+
+                ' ⭐ Bắt đầu theo dõi — khi dialog đóng (cmd.IsActive = False) → tự tắt planes
+                ToolInventor2025.Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_2.StartMonitorConstrain(cmd)
 
             Catch ex As Exception
                 MessageBox.Show("Lỗi chạy lệnh Constrain: " & ex.Message,
-                                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         End Sub
-
         Private Function FindConstrainCommand() As ControlDefinition
             Try
                 Dim app = ToolInventor2025.Globals.g_inventorApplication

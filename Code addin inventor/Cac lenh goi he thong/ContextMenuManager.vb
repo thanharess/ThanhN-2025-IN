@@ -4,7 +4,7 @@ Imports Inventor
 Namespace ToolInventor2025
 
     ' =========================================================
-    ' ENUM MÔI TRƯỜNG (đặt ở namespace level cho dễ gọi)
+    ' ENUM MÔI TRƯỜNG
     ' =========================================================
     <Flags>
     Public Enum ContextEnv
@@ -16,7 +16,7 @@ Namespace ToolInventor2025
     End Enum
 
     ''' <summary>
-    ''' Quản lý các nút tùy chỉnh trên menu chuột phải (Context Menu).
+    ''' Quản lý các nút tùy chỉnh trên menu chuột phải.
     ''' </summary>
     Public NotInheritable Class ContextMenuManager
 
@@ -31,14 +31,7 @@ Namespace ToolInventor2025
         Private Shared _userInputEvents As UserInputEvents
         Private Shared _initialized As Boolean = False
 
-        ' ---------------------------------------------------------
-        ' DANH SÁCH NÚT ĐÃ ĐĂNG KÝ
-        ' ---------------------------------------------------------
         Private Shared ReadOnly _registeredButtons As New List(Of ContextMenuButtonInfo)
-
-        ' ---------------------------------------------------------
-        ' CACHE ButtonDefinition
-        ' ---------------------------------------------------------
         Private Shared ReadOnly _buttonDefCache As New Dictionary(Of String, ButtonDefinition)
 
         ' =========================================================
@@ -50,10 +43,12 @@ Namespace ToolInventor2025
             Public Property Tooltip As String
             Public Property Handler As ButtonDefinitionSink_OnExecuteEventHandler
             Public Property Environment As ContextEnv
+            Public Property GroupName As String
+            Public Property OnlyWhenPlanesVisible As Boolean   ' ← MỚI
         End Class
 
         ' =========================================================
-        ' KHỞI TẠO (GỌI TRONG Activate)
+        ' KHỞI TẠO
         ' =========================================================
         Public Shared Sub Initialize(app As Inventor.Application, clientId As String)
             If app Is Nothing Then Return
@@ -68,7 +63,7 @@ Namespace ToolInventor2025
         End Sub
 
         ' =========================================================
-        ' DỌN DẸP (GỌI TRONG Deactivate)
+        ' DỌN DẸP
         ' =========================================================
         Public Shared Sub Shutdown()
             Try
@@ -86,14 +81,24 @@ Namespace ToolInventor2025
         End Sub
 
         ' =========================================================
-        ' ĐĂNG KÝ MỘT NÚT MỚI
+        ' ĐĂNG KÝ NÚT
+        '
+        ' displayName            : Tên hiển thị
+        ' internalName           : Tên nội bộ (unique)
+        ' tooltip                : Tooltip
+        ' handler                : Sub xử lý khi bấm
+        ' environment            : Môi trường (Part/Assembly/Drawing/All)
+        ' groupName              : (tùy chọn) Tên submenu — rỗng = nút trực tiếp
+        ' onlyWhenPlanesVisible  : (tùy chọn) True = chỉ hiện khi planes đang bật
         ' =========================================================
         Public Shared Sub RegisterButton(
             displayName As String,
             internalName As String,
             tooltip As String,
             handler As ButtonDefinitionSink_OnExecuteEventHandler,
-            Optional environment As ContextEnv = ContextEnv.All)
+            Optional environment As ContextEnv = ContextEnv.All,
+            Optional groupName As String = "",
+            Optional onlyWhenPlanesVisible As Boolean = False)
 
             If String.IsNullOrEmpty(internalName) Then Return
             If handler Is Nothing Then Return
@@ -107,7 +112,9 @@ Namespace ToolInventor2025
                 .InternalName = internalName,
                 .Tooltip = tooltip,
                 .Handler = handler,
-                .Environment = environment
+                .Environment = environment,
+                .GroupName = groupName,
+                .OnlyWhenPlanesVisible = onlyWhenPlanesVisible
             })
         End Sub
 
@@ -129,15 +136,75 @@ Namespace ToolInventor2025
 
                 Dim controlDefs As ControlDefinitions = _app.CommandManager.ControlDefinitions
 
+                ' ⭐ Kiểm tra planes có đang bật không (1 lần cho cả vòng lặp)
+                Dim planesVisible As Boolean = False
+                Try
+                    planesVisible = ToolInventor2025.Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_2.IsWorkFeaturesVisible
+                Catch
+                End Try
+
+                ' ── Nhóm các nút ──
+                Dim normalButtons As New List(Of ContextMenuButtonInfo)
+                Dim groupedButtons As New Dictionary(Of String, List(Of ContextMenuButtonInfo))
+
                 For Each info In _registeredButtons
                     If (info.Environment And currentEnv) = 0 Then Continue For
 
+                    ' ⭐ Bỏ qua nút nếu yêu cầu planes đang bật mà planes chưa bật
+                    If info.OnlyWhenPlanesVisible AndAlso Not planesVisible Then Continue For
+
+                    If String.IsNullOrEmpty(info.GroupName) Then
+                        normalButtons.Add(info)
+                    Else
+                        If Not groupedButtons.ContainsKey(info.GroupName) Then
+                            groupedButtons(info.GroupName) = New List(Of ContextMenuButtonInfo)
+                        End If
+                        groupedButtons(info.GroupName).Add(info)
+                    End If
+                Next
+
+                ' ── 1. Nút bình thường ──
+                For Each info In normalButtons
                     Dim btnDef As ButtonDefinition = GetOrCreateButtonDef(controlDefs, info)
                     If btnDef Is Nothing Then Continue For
+                    Try : CommandBar.Controls.AddButton(btnDef) : Catch : End Try
+                Next
+
+                ' ── 2. Submenu ──
+                For Each kvp In groupedButtons
+                    Dim groupName As String = kvp.Key
+                    Dim groupList As List(Of ContextMenuButtonInfo) = kvp.Value
+
+                    If groupList.Count = 0 Then Continue For
+
+                    ' Nếu submenu chỉ có 1 nút → thêm trực tiếp, không cần submenu
+                    If groupList.Count = 1 Then
+                        Dim btnDef As ButtonDefinition = GetOrCreateButtonDef(controlDefs, groupList(0))
+                        If btnDef IsNot Nothing Then
+                            Try : CommandBar.Controls.AddButton(btnDef) : Catch : End Try
+                        End If
+                        Continue For
+                    End If
 
                     Try
-                        CommandBar.Controls.AddButton(btnDef)
+                        Dim groupInternalName As String = "ToolInventor2025_CtxGroup_" & groupName.Replace(" ", "_")
+                        Dim popup As CommandControls = CommandBar.CommandControls
+
+                        Dim popupCtrl As CommandControl = popup.AddPopup(groupName, groupInternalName, _clientId)
+
+                        Dim popupControls As CommandControls = popupCtrl.Controls
+                        For Each info In groupList
+                            Dim btnDef As ButtonDefinition = GetOrCreateButtonDef(controlDefs, info)
+                            If btnDef Is Nothing Then Continue For
+                            Try : popupControls.AddButton(btnDef) : Catch : End Try
+                        Next
                     Catch
+                        ' Fallback: thêm trực tiếp vào menu chính
+                        For Each info In groupList
+                            Dim btnDef As ButtonDefinition = GetOrCreateButtonDef(controlDefs, info)
+                            If btnDef Is Nothing Then Continue For
+                            Try : CommandBar.Controls.AddButton(btnDef) : Catch : End Try
+                        Next
                     End Try
                 Next
 
