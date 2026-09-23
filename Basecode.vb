@@ -4,7 +4,7 @@ Imports System.Windows.Forms
 Imports Inventor
 Imports Microsoft.Win32
 
-Namespace ToolInventor2025
+Namespace ToolInventor2025d
     <ProgIdAttribute("ToolInventor2025.StandardAddInServer"),
     GuidAttribute("27785725-854b-490a-ac86-ab9dad7f3cc5")>
     Public Class Basecode
