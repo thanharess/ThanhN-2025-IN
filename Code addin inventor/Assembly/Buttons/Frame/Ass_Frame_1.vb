@@ -102,78 +102,55 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
         '============================================================
         ' MAIN BUTTON
         '============================================================
-        Public Sub OnExecute(
-            ByVal Context As NameValueMap)
+        Public Sub OnExecute(ByVal Context As NameValueMap)
+            Dim savedExpandState As Dictionary(Of String, Boolean) = Nothing
+            Dim doc As Inventor.Document = Nothing
 
             Try
-
                 _invApp = GetInventorApplication(Context)
+                If _invApp Is Nothing Then Return
 
-                If _invApp Is Nothing Then
-                    Return
-                End If
-
-                Dim doc As Inventor.Document =
-                    _invApp.ActiveDocument
+                doc = _invApp.ActiveDocument
 
                 If doc Is Nothing Then
-
-                    MessageBox.Show(
-                        "Không có document đang mở.",
-                        "Frame Generator",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning)
-
+                    MessageBox.Show("Không có document đang mở.",
+                                    "Frame Generator",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     Return
-
                 End If
 
-                If doc.DocumentType <>
-                    DocumentTypeEnum.kAssemblyDocumentObject Then
-
-                    MessageBox.Show(
-                        "Hãy chạy trong Assembly.",
-                        "Frame Generator",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning)
-
+                If doc.DocumentType <> DocumentTypeEnum.kAssemblyDocumentObject Then
+                    MessageBox.Show("Hãy chạy trong Assembly.",
+                                    "Frame Generator",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     Return
-
                 End If
 
-                Dim asmDoc As AssemblyDocument =
-                    CType(doc, AssemblyDocument)
+                Dim asmDoc As AssemblyDocument = CType(doc, AssemblyDocument)
 
-                '====================================================
-                ' UPDATE ĐẦU
-                '====================================================
+                '--- UPDATE ĐẦU ---
                 ForceUpdate(asmDoc)
 
-                '====================================================
-                ' SCAN
-                '====================================================
-                _sickTreatments.Clear()
+                '--- LƯU TRẠNG THÁI EXPANDED ---
+                savedExpandState = SaveExpandState(doc)
 
+                '--- FORCE EXPAND ---
+                ForceExpandAllBrowser(doc)
+                Try : System.Windows.Forms.Application.DoEvents() : Catch : End Try
+                Try : System.Threading.Thread.Sleep(200) : Catch : End Try
+
+                '--- SCAN ---
+                _sickTreatments.Clear()
                 ScanFrameBrowser(doc)
 
-                '====================================================
-                ' KHÔNG CÓ SICK
-                '====================================================
                 If _sickTreatments.Count = 0 Then
-
-                    MessageBox.Show(
-                        "Không tìm thấy Frame Treatment bị lỗi.",
-                        "Frame Generator",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information)
-
+                    MessageBox.Show("Không tìm thấy Frame Treatment bị lỗi.",
+                                    "Frame Generator",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information)
                     Return
-
                 End If
 
-                '====================================================
-                ' ĐẾM
-                '====================================================
+                '--- ĐẾM ---
                 Dim trimCount As Integer = 0
                 Dim miterCount As Integer = 0
                 Dim notchCount As Integer = 0
@@ -181,112 +158,55 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
                 Dim cornersCount As Integer = 0
 
                 For Each item As SickFrameInfo In _sickTreatments
-
-                    If item Is Nothing Then
-                        Continue For
-                    End If
-
+                    If item Is Nothing Then Continue For
                     Select Case item.TreatmentType
-
-                        Case FrameTreatmentType.TrimExtend
-                            trimCount += 1
-
-                        Case FrameTreatmentType.Miter
-                            miterCount += 1
-
-                        Case FrameTreatmentType.Notch
-                            notchCount += 1
-
-                        Case FrameTreatmentType.LengthenShorten
-                            lengthenCount += 1
-
-                        Case FrameTreatmentType.Corners
-                            cornersCount += 1
-
+                        Case FrameTreatmentType.TrimExtend : trimCount += 1
+                        Case FrameTreatmentType.Miter : miterCount += 1
+                        Case FrameTreatmentType.Notch : notchCount += 1
+                        Case FrameTreatmentType.LengthenShorten : lengthenCount += 1
+                        Case FrameTreatmentType.Corners : cornersCount += 1
                     End Select
-
                 Next
 
-                '====================================================
-                ' XÁC NHẬN
-                '====================================================
-                Dim total As Integer =
-                    trimCount +
-                    miterCount +
-                    notchCount +
-                    lengthenCount +
-                    cornersCount
+                Dim total As Integer = trimCount + miterCount + notchCount + lengthenCount + cornersCount
 
                 Dim msg As New StringBuilder
-
-                msg.AppendLine(
-                    "Phát hiện " &
-                    total.ToString() &
-                    " Frame Treatment bị Sick.")
-
+                msg.AppendLine("Phát hiện " & total.ToString() & " Frame Treatment bị Sick.")
                 msg.AppendLine()
-
-                If trimCount > 0 Then
-                    msg.AppendLine(
-                        "Trim / Extend     : " &
-                        trimCount.ToString())
-                End If
-
-                If miterCount > 0 Then
-                    msg.AppendLine(
-                        "Miter              : " &
-                        miterCount.ToString())
-                End If
-
-                If notchCount > 0 Then
-                    msg.AppendLine(
-                        "Notch              : " &
-                        notchCount.ToString())
-                End If
-
-                If lengthenCount > 0 Then
-                    msg.AppendLine(
-                        "Lengthen / Shorten : " &
-                        lengthenCount.ToString())
-                End If
-
-                If cornersCount > 0 Then
-                    msg.AppendLine(
-                        "Corners            : " &
-                        cornersCount.ToString())
-                End If
-
+                If trimCount > 0 Then msg.AppendLine("Trim / Extend     : " & trimCount.ToString())
+                If miterCount > 0 Then msg.AppendLine("Miter             : " & miterCount.ToString())
+                If notchCount > 0 Then msg.AppendLine("Notch             : " & notchCount.ToString())
+                If lengthenCount > 0 Then msg.AppendLine("Lengthen / Shorten: " & lengthenCount.ToString())
+                If cornersCount > 0 Then msg.AppendLine("Corners           : " & cornersCount.ToString())
                 msg.AppendLine()
                 msg.AppendLine("Tiếp tục sửa?")
 
                 Dim result As DialogResult =
-                    MessageBox.Show(
-                        msg.ToString(),
-                        "FRAME GENERATOR",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Warning)
+                    MessageBox.Show(msg.ToString(), "FRAME GENERATOR",
+                                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
 
-                If result <> DialogResult.Yes Then
-                    Return
-                End If
+                If result <> DialogResult.Yes Then Return
 
-                '====================================================
-                ' XỬ LÝ
-                '====================================================
+                '--- XỬ LÝ ---
                 ProcessSickTreatments(asmDoc)
 
             Catch ex As Exception
+                MessageBox.Show("LỖI:" & vbCrLf & vbCrLf & ex.Message,
+                                "Frame Generator",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error)
 
-                MessageBox.Show(
-                    "LỖI:" &
-                    vbCrLf & vbCrLf &
-                    ex.Message,
-                    "Frame Generator",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error)
 
+            Finally
+                '====================================================
+                ' ⭐ COLLAPSE ALL — dùng lệnh có sẵn của Inventor
+                '====================================================
+                Try
+                    If doc IsNot Nothing Then
+                        CollapseAllViaInventorCommand()
+                    End If
+                Catch
+                End Try
             End Try
-
         End Sub
 
         '============================================================
@@ -419,25 +339,64 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
                 End Try
 
                 '----------------------------------------------------
-                ' DISPLAY STATE
+                ' DISPLAY STATE — mở rộng cho Inventor 2025
                 '----------------------------------------------------
                 Try
+                    Dim ds As Object = node.BrowserNodeDefinition.DisplayState
+                    Dim stateNumber As Integer = Convert.ToInt32(ds)
 
-                    Dim ds As Object =
-                        node.BrowserNodeDefinition.DisplayState
-
-                    Dim stateNumber As Integer =
-                        Convert.ToInt32(ds)
-
+                    ' Cách 1: magic number cũ
                     If stateNumber = SICK_DISPLAY_STATE Then
                         isSick = True
                     End If
 
+                    ' Cách 2: một số giá trị sick khác có thể gặp
+                    If Not isSick Then
+                        Select Case stateNumber
+                            Case 46852, 46853, 46854, 46855
+                                isSick = True
+                        End Select
+                    End If
                 Catch
-
                     isSick = False
-
                 End Try
+
+                '----------------------------------------------------
+                ' Fallback: đọc tooltip / native object nếu chưa phát hiện
+                '----------------------------------------------------
+                If Not isSick Then
+                    Try
+                        Dim t = node.BrowserNodeDefinition.StateIconToolTipText
+                        If Not String.IsNullOrEmpty(t) Then
+                            Dim tl = t.ToLowerInvariant()
+                            If tl.Contains("error") OrElse
+                               tl.Contains("sick") OrElse
+                               tl.Contains("fail") OrElse
+                               tl.Contains("lỗi") OrElse
+                               tl.Contains("không thể") Then
+                                isSick = True
+                            End If
+                        End If
+                    Catch
+                    End Try
+
+                    Try
+                        Dim obj = node.NativeObject
+                        If obj IsNot Nothing Then
+                            Try
+                                Dim hs As Object = obj.HealthStatus
+                                If hs IsNot Nothing Then
+                                    Dim hstr = hs.ToString()
+                                    If hstr.Contains("Sick") OrElse hstr.Contains("Error") Then
+                                        isSick = True
+                                    End If
+                                End If
+                            Catch
+                            End Try
+                        End If
+                    Catch
+                    End Try
+                End If
 
                 '----------------------------------------------------
                 ' ADD SICK
@@ -1467,7 +1426,358 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
             f.ShowDialog()
 
         End Sub
+        '============================================================
+        ' ⭐ FORCE EXPAND TOÀN BỘ BROWSER (fix node collapsed)
+        '    Inventor chỉ load con khi node được expand.
+        '    Nếu không expand → scan không thấy node sick bên trong.
+        '============================================================
+        Private Sub ForceExpandAllBrowser(ByVal doc As Inventor.Document)
+            If doc Is Nothing Then Return
 
+            Dim pane As Inventor.BrowserPane = Nothing
+            Try
+                pane = doc.BrowserPanes.Item("Model")
+            Catch
+                Try
+                    pane = doc.BrowserPanes.ActivePane
+                Catch
+                End Try
+            End Try
+
+            If pane Is Nothing Then Return
+            If pane.TopNode Is Nothing Then Return
+
+            Try
+                ExpandNodeRecursive(pane.TopNode, 0)
+            Catch
+            End Try
+
+            ' Cho UI thread xử lý nốt sự kiện expand
+            Try : System.Windows.Forms.Application.DoEvents() : Catch : End Try
+            Try : System.Threading.Thread.Sleep(150) : Catch : End Try
+        End Sub
+
+
+        Private Sub ExpandNodeRecursive(ByVal node As Inventor.BrowserNode,
+                                        ByVal depth As Integer)
+            If node Is Nothing Then Return
+            If depth > 100 Then Return   ' tránh đệ quy vô hạn
+
+            '----- 1. Expand chính node này -----
+            Try
+                If Not node.Expanded Then
+                    node.Expanded = True
+                End If
+            Catch
+            End Try
+
+            ' Cho Inventor kịp nạp con vào browser tree
+            Try : System.Windows.Forms.Application.DoEvents() : Catch : End Try
+
+            '----- 2. Duyệt con -----
+            Dim childCount As Integer = 0
+            Try
+                childCount = node.BrowserNodes.Count
+            Catch
+                Return
+            End Try
+
+            For i As Integer = 1 To childCount
+                Try
+                    Dim child As Inventor.BrowserNode = node.BrowserNodes.Item(i)
+                    ExpandNodeRecursive(child, depth + 1)
+                Catch
+                End Try
+            Next
+        End Sub
+
+        '============================================================
+        ' ⭐ LƯU TRẠNG THÁI EXPANDED CỦA TOÀN BỘ NODE
+        '    Trả về Dictionary<FullPath, Expanded>
+        '============================================================
+        Private Function SaveExpandState(ByVal doc As Inventor.Document) As Dictionary(Of String, Boolean)
+            Dim state As New Dictionary(Of String, Boolean)
+            If doc Is Nothing Then Return state
+
+            Dim pane As Inventor.BrowserPane = Nothing
+            Try
+                pane = doc.BrowserPanes.Item("Model")
+            Catch
+                Try : pane = doc.BrowserPanes.ActivePane : Catch : End Try
+            End Try
+            If pane Is Nothing Then Return state
+            If pane.TopNode Is Nothing Then Return state
+
+            Try
+                SaveExpandStateRecursive(pane.TopNode, state)
+            Catch
+            End Try
+
+            Return state
+        End Function
+
+
+        Private Sub SaveExpandStateRecursive(ByVal node As Inventor.BrowserNode,
+                                             ByVal state As Dictionary(Of String, Boolean))
+            If node Is Nothing Then Return
+
+            Dim key As String = ""
+            Try : key = node.FullPath : Catch : End Try
+
+            If Not String.IsNullOrEmpty(key) Then
+                Try
+                    state(key) = node.Expanded
+                Catch
+                End Try
+            End If
+
+            Dim childCount As Integer = 0
+            Try : childCount = node.BrowserNodes.Count : Catch : Return : End Try
+
+            For i As Integer = 1 To childCount
+                Try
+                    Dim child As Inventor.BrowserNode = node.BrowserNodes.Item(i)
+                    SaveExpandStateRecursive(child, state)
+                Catch
+                End Try
+            Next
+        End Sub
+
+
+        '============================================================
+        ' ⭐ RESTORE TRẠNG THÁI EXPANDED
+        '============================================================
+        Private Sub RestoreExpandState(ByVal doc As Inventor.Document,
+                                       ByVal state As Dictionary(Of String, Boolean))
+            If doc Is Nothing OrElse state Is Nothing Then Return
+            If state.Count = 0 Then Return
+
+            Dim pane As Inventor.BrowserPane = Nothing
+            Try
+                pane = doc.BrowserPanes.Item("Model")
+            Catch
+                Try : pane = doc.BrowserPanes.ActivePane : Catch : End Try
+            End Try
+            If pane Is Nothing Then Return
+            If pane.TopNode Is Nothing Then Return
+
+            Try
+                RestoreExpandStateRecursive(pane.TopNode, state)
+            Catch
+            End Try
+
+            Try : System.Windows.Forms.Application.DoEvents() : Catch : End Try
+        End Sub
+
+
+        Private Sub RestoreExpandStateRecursive(ByVal node As Inventor.BrowserNode,
+                                                ByVal state As Dictionary(Of String, Boolean))
+            If node Is Nothing Then Return
+
+            Dim key As String = ""
+            Try : key = node.FullPath : Catch : End Try
+
+            If Not String.IsNullOrEmpty(key) AndAlso state.ContainsKey(key) Then
+                Try
+                    node.Expanded = state(key)
+                Catch
+                End Try
+            End If
+
+            Dim childCount As Integer = 0
+            Try : childCount = node.BrowserNodes.Count : Catch : Return : End Try
+
+            For i As Integer = 1 To childCount
+                Try
+                    Dim child As Inventor.BrowserNode = node.BrowserNodes.Item(i)
+                    RestoreExpandStateRecursive(child, state)
+                Catch
+                End Try
+            Next
+        End Sub
+        '============================================================
+        ' ⭐ RESTORE AN TOÀN
+        '    Thử restore theo FullPath.
+        '    Nếu FullPath đã đổi do xóa node → collapse toàn bộ.
+        '============================================================
+        Private Sub RestoreExpandStateSafe(ByVal doc As Inventor.Document,
+                                           ByVal state As Dictionary(Of String, Boolean))
+            If doc Is Nothing Then Return
+
+            Dim pane As Inventor.BrowserPane = Nothing
+            Try
+                pane = doc.BrowserPanes.Item("Model")
+            Catch
+                Try : pane = doc.BrowserPanes.ActivePane : Catch : End Try
+            End Try
+            If pane Is Nothing Then Return
+            If pane.TopNode Is Nothing Then Return
+
+            '--- Bước 1: đếm số node khớp path ---
+            Dim matched As Integer = 0
+            Dim totalNodes As Integer = 0
+
+            If state IsNot Nothing AndAlso state.Count > 0 Then
+                Try
+                    CountMatchedNodes(pane.TopNode, state, matched, totalNodes)
+                Catch
+                End Try
+            End If
+
+            '--- Bước 2: nếu khớp < 50% → collapse toàn bộ ---
+            Dim useCollapseAll As Boolean = False
+
+            If state Is Nothing OrElse state.Count = 0 Then
+                useCollapseAll = True
+            ElseIf totalNodes > 0 AndAlso (matched * 100 \ totalNodes) < 50 Then
+                useCollapseAll = True
+            End If
+
+            If useCollapseAll Then
+                CollapseAllNodes(pane.TopNode)
+            Else
+                Try
+                    RestoreExpandStateRecursive(pane.TopNode, state)
+                Catch
+                    CollapseAllNodes(pane.TopNode)
+                End Try
+            End If
+
+            Try : System.Windows.Forms.Application.DoEvents() : Catch : End Try
+        End Sub
+
+
+        Private Sub CountMatchedNodes(ByVal node As Inventor.BrowserNode,
+                                      ByVal state As Dictionary(Of String, Boolean),
+                                      ByRef matched As Integer,
+                                      ByRef total As Integer)
+            If node Is Nothing Then Return
+
+            total += 1
+
+            Dim key As String = ""
+            Try : key = node.FullPath : Catch : End Try
+
+            If Not String.IsNullOrEmpty(key) AndAlso state.ContainsKey(key) Then
+                matched += 1
+            End If
+
+            Dim childCount As Integer = 0
+            Try : childCount = node.BrowserNodes.Count : Catch : Return : End Try
+
+            For i As Integer = 1 To childCount
+                Try
+                    CountMatchedNodes(node.BrowserNodes.Item(i), state, matched, total)
+                Catch
+                End Try
+            Next
+        End Sub
+
+
+        '============================================================
+        ' ⭐ COLLAPSE TOÀN BỘ (trừ TopNode)
+        '============================================================
+        Private Sub CollapseAllNodes(ByVal node As Inventor.BrowserNode)
+            If node Is Nothing Then Return
+
+            Dim childCount As Integer = 0
+            Try : childCount = node.BrowserNodes.Count : Catch : Return : End Try
+
+            For i As Integer = 1 To childCount
+                Try
+                    Dim child As Inventor.BrowserNode = node.BrowserNodes.Item(i)
+                    Try
+                        If child.Expanded Then child.Expanded = False
+                    Catch
+                    End Try
+                    CollapseAllNodes(child)
+                Catch
+                End Try
+            Next
+        End Sub
+        '============================================================
+        ' ⭐ GỌI LỆNH COLLAPSE ALL CỦA INVENTOR
+        '    Đây là lệnh chính chủ trong menu chuột phải browser.
+        '============================================================
+        Private Sub CollapseAllViaInventorCommand()
+            If _invApp Is Nothing Then Return
+
+            '--- Bước 1: thử lệnh Collapse All chuẩn ---
+            Dim cmd As ControlDefinition = Nothing
+
+            Try
+                cmd = _invApp.CommandManager.ControlDefinitions.Item("CollapseAllCmd")
+            Catch
+                cmd = Nothing
+            End Try
+
+            If cmd Is Nothing Then
+                Try
+                    cmd = _invApp.CommandManager.ControlDefinitions.Item("BrowserCollapseAllCmd")
+                Catch
+                    cmd = Nothing
+                End Try
+            End If
+
+            If cmd Is Nothing Then
+                Try
+                    cmd = _invApp.CommandManager.ControlDefinitions.Item("CollapseAll")
+                Catch
+                    cmd = Nothing
+                End Try
+            End If
+
+            '--- Nếu không có lệnh có sẵn → quét toàn bộ control definitions ---
+            If cmd Is Nothing Then
+                Try
+                    Dim all As ControlDefinitions = _invApp.CommandManager.ControlDefinitions
+                    For i As Integer = 1 To all.Count
+                        Try
+                            Dim c As ControlDefinition = all.Item(i)
+                            Dim nm As String = ""
+                            Try : nm = c.InternalName : Catch : End Try
+                            If Not String.IsNullOrEmpty(nm) AndAlso
+                               (nm.IndexOf("CollapseAll", StringComparison.OrdinalIgnoreCase) >= 0) Then
+                                cmd = c
+                                Exit For
+                            End If
+                        Catch
+                        End Try
+                    Next
+                Catch
+                End Try
+            End If
+
+            '--- Chạy lệnh ---
+            If cmd IsNot Nothing Then
+                Try
+                    If cmd.Enabled Then
+                        cmd.Execute()
+                        Try : System.Windows.Forms.Application.DoEvents() : Catch : End Try
+                        Try : System.Threading.Thread.Sleep(100) : Catch : End Try
+                        Return
+                    End If
+                Catch
+                End Try
+            End If
+
+            '--- Fallback: tự collapse qua code ---
+            Try
+                Dim doc = _invApp.ActiveDocument
+                If doc IsNot Nothing Then
+                    Dim pane As Inventor.BrowserPane = Nothing
+                    Try
+                        pane = doc.BrowserPanes.Item("Model")
+                    Catch
+                        Try : pane = doc.BrowserPanes.ActivePane : Catch : End Try
+                    End Try
+                    If pane IsNot Nothing AndAlso pane.TopNode IsNot Nothing Then
+                        CollapseAllNodes(pane.TopNode)
+                    End If
+                End If
+            Catch
+            End Try
+        End Sub
     End Module
 
 End Namespace
