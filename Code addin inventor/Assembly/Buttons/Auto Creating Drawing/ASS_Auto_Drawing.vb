@@ -32,6 +32,7 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                 frm.ShowInTaskbar = False
                 frm.BackColor = System.Drawing.Color.FromArgb(245, 245, 245)
                 frm.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular, GraphicsUnit.Point)
+                frm.Tag = 0
 
                 '===== HEADER =====
                 Dim pnlHeader As New Panel()
@@ -77,13 +78,14 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                 btnCancel.BackColor = System.Drawing.Color.FromArgb(245, 245, 245)
                 btnCancel.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular, GraphicsUnit.Point)
                 AddHandler btnCancel.Click, Sub()
-                                                result = 0
+                                                frm.Tag = 0
                                                 frm.Close()
                                             End Sub
                 frm.Controls.Add(btnCancel)
                 frm.CancelButton = btnCancel
 
                 frm.ShowDialog()
+                result = CInt(frm.Tag)          ' ← ĐỌC TAG
             End Using
 
             Return result
@@ -103,7 +105,6 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
             pnl.BorderStyle = BorderStyle.FixedSingle
             pnl.Cursor = Cursors.Hand
 
-            '--- Số thứ tự ---
             Dim lblNum As New Label()
             lblNum.Text = value.ToString()
             lblNum.Font = New Font("Segoe UI", 20.0F, FontStyle.Bold, GraphicsUnit.Point)
@@ -113,14 +114,12 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
             lblNum.TextAlign = ContentAlignment.MiddleCenter
             pnl.Controls.Add(lblNum)
 
-            '--- Đường phân cách ---
             Dim sep As New Panel()
             sep.Location = New System.Drawing.Point(75, 15)
             sep.Size = New System.Drawing.Size(1, 45)
             sep.BackColor = System.Drawing.Color.FromArgb(220, 220, 220)
             pnl.Controls.Add(sep)
 
-            '--- Tiêu đề ---
             Dim lblTitle As New Label()
             lblTitle.Text = title
             lblTitle.Font = New Font("Segoe UI", 11.5F, FontStyle.Bold, GraphicsUnit.Point)
@@ -129,7 +128,6 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
             lblTitle.AutoSize = True
             pnl.Controls.Add(lblTitle)
 
-            '--- Mô tả ---
             Dim lblDesc As New Label()
             lblDesc.Text = desc
             lblDesc.Font = New Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point)
@@ -138,10 +136,8 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
             lblDesc.AutoSize = True
             pnl.Controls.Add(lblDesc)
 
-            '--- Hover effect ---
             Dim hoverOn As EventHandler = Sub()
                                               pnl.BackColor = System.Drawing.Color.FromArgb(235, 242, 252)
-                                              pnl.BorderStyle = BorderStyle.FixedSingle
                                           End Sub
             Dim hoverOff As EventHandler = Sub()
                                                pnl.BackColor = System.Drawing.Color.White
@@ -156,7 +152,6 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
             AddHandler lblNum.MouseEnter, hoverOn
             AddHandler lblNum.MouseLeave, hoverOff
 
-            '--- Click ---
             Dim clickH As EventHandler = Sub(sender, e)
                                              frm.Tag = value
                                              frm.DialogResult = DialogResult.OK
