@@ -1,5 +1,6 @@
 Imports System.Collections.Generic
 Imports System.Windows.Forms
+Imports System.Drawing
 Imports Inventor
 Imports Microsoft.VisualBasic
 Imports System.Globalization
@@ -11,19 +12,7 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
         Public Sub OnExecute(ByVal Context As NameValueMap)
 
-            Dim choice As Integer = PickFromList(
-                "Chọn chức năng copy property",
-                New String() {
-                    "1 - Copy Item Number → item1 (Top-level)",
-                    "1b - Copy Item Number → item1 (All-level)",
-                    "1c - Copy Item Number → item0 (Structure)",
-                    "2 - Copy Qty cụm (Status) + Part top (SL part)",
-                    "3 - Copy Item Number + Qty cụm/Part top",
-                    "4 - Ghi / sửa property PL (Sheet Metal)",
-                    "5 - Copy Qty Part all-level → SL part all",
-                    "6 - Copy TẤT CẢ (1+2+4+5)"
-                }, 0)
-
+            Dim choice As Integer = ShowCopyPropertyForm()
             If choice < 0 Then Exit Sub
 
             Dim doItem1Top As Boolean = (choice = 0 OrElse choice = 4 OrElse choice = 7)
@@ -63,25 +52,19 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
                 Dim countPL As Integer = 0
                 Dim countSLall As Integer = 0
 
-                ' PN → giá trị
                 Dim dictItem1 As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
                 Dim dictItem0 As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
 
-                ' 1. Lấy số từ Structured
                 If doItem1Top OrElse doItem1All OrElse doItem0 Then
                     CollectFromStructured(oBOMView.BOMRows, doItem1Top, doItem1All, doItem0,
                                           dictItem1, dictItem0, True)
                 End If
 
-                ' 2. Ghi vào tất cả document (Structured + Model Data / mọi occurrence)
-                '    cùng PN → cùng số
                 Dim writtenDocs As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
 
-                ' Ghi từ Structured trước
                 WriteToAllOccurrences(oAsm.ComponentDefinition.Occurrences, dictItem1, dictItem0,
                                       writtenDocs, countItem1, countItem0)
 
-                ' 3. Qty / PL / SLall giữ nguyên
                 If doQtyTop Then
                     For Each row As BOMRow In oBOMView.BOMRows
                         If IsSkipped(row) Then Continue For
@@ -145,6 +128,201 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
         End Sub
 
+
+        '=========================================================
+        ' FORM CHỌN — TO HƠN
+        '=========================================================
+        Private Function ShowCopyPropertyForm() As Integer
+            Dim result As Integer = -1
+
+            Using frm As New Form()
+                frm.Text = "Copy Property — BOM"
+                frm.AutoScaleMode = AutoScaleMode.None
+                frm.AutoScaleDimensions = New SizeF(96.0F, 96.0F)
+                frm.ClientSize = New Size(920, 660)
+                frm.FormBorderStyle = FormBorderStyle.FixedSingle
+                frm.StartPosition = FormStartPosition.CenterScreen
+                frm.MaximizeBox = False
+                frm.MinimizeBox = False
+                frm.ShowInTaskbar = False
+                frm.BackColor = System.Drawing.Color.FromArgb(245, 245, 245)
+                frm.Font = New Font("Segoe UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point)
+                frm.Tag = -1
+
+                '===== HEADER =====
+                Dim pnlHeader As New Panel()
+                pnlHeader.Location = New System.Drawing.Point(0, 0)
+                pnlHeader.Size = New System.Drawing.Size(920, 80)
+                pnlHeader.BackColor = System.Drawing.Color.FromArgb(45, 100, 180)
+                frm.Controls.Add(pnlHeader)
+
+                Dim lblTitle As New Label()
+                lblTitle.Text = "COPY PROPERTY — BOM"
+                lblTitle.Font = New Font("Segoe UI", 17.0F, FontStyle.Bold, GraphicsUnit.Point)
+                lblTitle.ForeColor = System.Drawing.Color.White
+                lblTitle.Dock = DockStyle.Fill
+                lblTitle.TextAlign = ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblTitle)
+
+                Dim lblSub As New Label()
+                lblSub.Text = "Chọn chức năng copy / ghi property cho Part & Cụm"
+                lblSub.Font = New Font("Segoe UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point)
+                lblSub.ForeColor = System.Drawing.Color.FromArgb(220, 230, 245)
+                lblSub.Dock = DockStyle.Bottom
+                lblSub.Height = 22
+                lblSub.TextAlign = ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblSub)
+
+                '===== NHÓM 1: ITEM NUMBER =====
+                Dim gb1 As New GroupBox() With {
+                    .Text = "Item Number",
+                    .Location = New System.Drawing.Point(20, 100),
+                    .Size = New System.Drawing.Size(880, 155),
+                    .Font = New Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point),
+                    .ForeColor = System.Drawing.Color.FromArgb(45, 100, 180),
+                    .BackColor = System.Drawing.Color.White}
+                frm.Controls.Add(gb1)
+
+                AddCard(gb1, frm, 0, "Copy Item Number → item1",
+                        "Lấy từ BOM Top-level", 15, 35, 275)
+                AddCard(gb1, frm, 1, "Copy Item Number → item1",
+                        "Lấy từ BOM All-level", 302, 35, 275)
+                AddCard(gb1, frm, 2, "Copy Item Number → item0",
+                        "Structure (có .0)", 589, 35, 275)
+
+                '===== NHÓM 2: QUANTITY =====
+                Dim gb2 As New GroupBox() With {
+                    .Text = "Quantity (Số lượng)",
+                    .Location = New System.Drawing.Point(20, 265),
+                    .Size = New System.Drawing.Size(880, 155),
+                    .Font = New Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point),
+                    .ForeColor = System.Drawing.Color.FromArgb(45, 100, 180),
+                    .BackColor = System.Drawing.Color.White}
+                frm.Controls.Add(gb2)
+
+                AddCard(gb2, frm, 3, "Qty cụm + SL Part",
+                        "Status + SL part top-level", 15, 35, 275)
+                AddCard(gb2, frm, 4, "Item Number + Qty",
+                        "Gộp chức năng 1 + 2", 302, 35, 275)
+                AddCard(gb2, frm, 5, "Qty Part all-level",
+                        "→ SL part all", 589, 35, 275)
+
+                '===== NHÓM 3: ĐẶC BIỆT =====
+                Dim gb3 As New GroupBox() With {
+                    .Text = "Đặc biệt",
+                    .Location = New System.Drawing.Point(20, 430),
+                    .Size = New System.Drawing.Size(880, 155),
+                    .Font = New Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point),
+                    .ForeColor = System.Drawing.Color.FromArgb(45, 100, 180),
+                    .BackColor = System.Drawing.Color.White}
+                frm.Controls.Add(gb3)
+
+                AddCard(gb3, frm, 6, "Ghi / sửa Property PL",
+                        "Cho Part Sheet Metal", 15, 35, 275)
+                AddCard(gb3, frm, 7, "Copy TẤT CẢ",
+                        "Chạy 1 + 2 + 4 + 5", 302, 35, 275)
+
+                Dim lblAll As New Label() With {
+                    .Text = "★ Chạy toàn bộ các chức năng trên" & vbCrLf &
+                            "   theo thứ tự ưu tiên",
+                    .Location = New System.Drawing.Point(600, 45),
+                    .Size = New System.Drawing.Size(260, 60),
+                    .ForeColor = System.Drawing.Color.FromArgb(140, 140, 140),
+                    .Font = New Font("Segoe UI", 9.5F, FontStyle.Italic, GraphicsUnit.Point)}
+                gb3.Controls.Add(lblAll)
+
+                '===== NÚT HỦY =====
+                Dim btnCancel As New Button()
+                btnCancel.Text = "HỦY"
+                btnCancel.Size = New Size(140, 45)
+                btnCancel.Location = New System.Drawing.Point(760, 600)
+                btnCancel.FlatStyle = FlatStyle.Flat
+                btnCancel.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(180, 180, 180)
+                btnCancel.BackColor = System.Drawing.Color.FromArgb(245, 245, 245)
+                btnCancel.Font = New Font("Segoe UI", 10.0F, FontStyle.Regular, GraphicsUnit.Point)
+                AddHandler btnCancel.Click, Sub()
+                                                frm.Tag = -1
+                                                frm.Close()
+                                            End Sub
+                frm.Controls.Add(btnCancel)
+                frm.CancelButton = btnCancel
+
+                frm.ShowDialog()
+                result = CInt(frm.Tag)
+            End Using
+
+            Return result
+        End Function
+
+
+        '=========================================================
+        ' THÊM CARD — TO HƠN
+        '=========================================================
+        Private Sub AddCard(ByVal parent As GroupBox,
+                            ByVal frm As Form,
+                            ByVal value As Integer,
+                            ByVal title As String,
+                            ByVal desc As String,
+                            ByVal left As Integer,
+                            ByVal top As Integer,
+                            ByVal width As Integer)
+
+            Dim pnl As New Panel()
+            pnl.Location = New System.Drawing.Point(left, top)
+            pnl.Size = New System.Drawing.Size(width, 100)
+            pnl.BackColor = System.Drawing.Color.FromArgb(250, 250, 250)
+            pnl.BorderStyle = BorderStyle.FixedSingle
+            pnl.Cursor = Cursors.Hand
+            parent.Controls.Add(pnl)
+
+            '--- Tiêu đề ---
+            Dim lblTitle As New Label()
+            lblTitle.Text = title
+            lblTitle.Font = New Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point)
+            lblTitle.ForeColor = System.Drawing.Color.FromArgb(30, 30, 30)
+            lblTitle.Location = New System.Drawing.Point(20, 20)
+            lblTitle.Size = New System.Drawing.Size(width - 30, 26)
+            pnl.Controls.Add(lblTitle)
+
+            '--- Mô tả ---
+            Dim lblDesc As New Label()
+            lblDesc.Text = desc
+            lblDesc.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular, GraphicsUnit.Point)
+            lblDesc.ForeColor = System.Drawing.Color.FromArgb(110, 110, 110)
+            lblDesc.Location = New System.Drawing.Point(20, 52)
+            lblDesc.Size = New System.Drawing.Size(width - 30, 26)
+            pnl.Controls.Add(lblDesc)
+
+            '--- Hover ---
+            Dim hoverOn As EventHandler = Sub()
+                                              pnl.BackColor = System.Drawing.Color.FromArgb(235, 242, 252)
+                                          End Sub
+            Dim hoverOff As EventHandler = Sub()
+                                               pnl.BackColor = System.Drawing.Color.FromArgb(250, 250, 250)
+                                           End Sub
+
+            AddHandler pnl.MouseEnter, hoverOn
+            AddHandler pnl.MouseLeave, hoverOff
+            AddHandler lblTitle.MouseEnter, hoverOn
+            AddHandler lblTitle.MouseLeave, hoverOff
+            AddHandler lblDesc.MouseEnter, hoverOn
+            AddHandler lblDesc.MouseLeave, hoverOff
+
+            '--- Click ---
+            Dim clickH As EventHandler = Sub(sender, e)
+                                             frm.Tag = value
+                                             frm.DialogResult = DialogResult.OK
+                                             frm.Close()
+                                         End Sub
+            AddHandler pnl.Click, clickH
+            AddHandler lblTitle.Click, clickH
+            AddHandler lblDesc.Click, clickH
+        End Sub
+
+
+        '=========================================================
+        ' CÁC HÀM XỬ LÝ — GIỮ NGUYÊN
+        '=========================================================
         Private Function GetDoc(row As BOMRow) As Document
             Try
                 If row Is Nothing OrElse row.ComponentDefinitions Is Nothing OrElse row.ComponentDefinitions.Count = 0 Then Return Nothing
@@ -166,7 +344,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
             End Try
         End Function
 
-        ' 1. Thu thập số từ Structured theo PN
         Private Sub CollectFromStructured(rows As BOMRowsEnumerator,
                                           doItem1Top As Boolean,
                                           doItem1All As Boolean,
@@ -220,7 +397,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
             Next
         End Sub
 
-        ' 2. Duyệt toàn bộ occurrence (Model Data + mọi cấp) → ghi theo PN
         Private Sub WriteToAllOccurrences(occs As ComponentOccurrences,
                                           dictItem1 As Dictionary(Of String, String),
                                           dictItem0 As Dictionary(Of String, String),
@@ -238,7 +414,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
                     Dim key As String = doc.FullFileName
                     If writtenDocs.Contains(key) Then
-                        ' đã ghi rồi, vẫn đệ quy con
                     Else
                         Dim pn As String = GetPartNumberFromDoc(doc)
                         If String.IsNullOrEmpty(pn) Then pn = doc.DisplayName
@@ -262,7 +437,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
                         If written Then writtenDocs.Add(key)
                     End If
 
-                    ' Đệ quy sub-assembly
                     If occ.DefinitionDocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
                         Try
                             WriteToAllOccurrences(occ.SubOccurrences, dictItem1, dictItem0,
@@ -286,7 +460,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
         Private Function GetQty(row As BOMRow) As String
             Try
-                ' Ưu tiên ItemQuantity (đúng cho thép hình – số lượng = kích thước)
                 Return CStr(row.ItemQuantity)
             Catch
                 Try
@@ -398,78 +571,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
                 Return SetUserProperty(doc, "Status", value)
             Catch
                 Return False
-            End Try
-        End Function
-
-        Private Function PickFromList(title As String, items As String(),
-                                      Optional defaultIndex As Integer = 0) As Integer
-            Dim frm As New Form()
-            Try
-                frm.Text = title
-                frm.StartPosition = FormStartPosition.CenterScreen
-                frm.FormBorderStyle = FormBorderStyle.FixedDialog
-                frm.MaximizeBox = False
-                frm.MinimizeBox = False
-                frm.ShowInTaskbar = False
-                frm.Width = 520
-                frm.Height = 380
-
-                Dim lst As New ListBox()
-                lst.Left = 12 : lst.Top = 12
-                lst.Width = 480 : lst.Height = 270
-                lst.Font = New System.Drawing.Font("Segoe UI", 10)
-
-                For Each s As String In items
-                    lst.Items.Add(s)
-                Next
-
-                If lst.Items.Count > 0 Then
-                    If defaultIndex >= 0 AndAlso defaultIndex < lst.Items.Count Then
-                        lst.SelectedIndex = defaultIndex
-                    Else
-                        lst.SelectedIndex = 0
-                    End If
-                End If
-
-                Dim btnOK As New Button()
-                btnOK.Text = "OK"
-                btnOK.Left = 300 : btnOK.Top = 295
-                btnOK.Width = 90 : btnOK.Height = 30
-                btnOK.DialogResult = DialogResult.OK
-
-                Dim btnCancel As New Button()
-                btnCancel.Text = "Hủy"
-                btnCancel.Left = 400 : btnCancel.Top = 295
-                btnCancel.Width = 90 : btnCancel.Height = 30
-                btnCancel.DialogResult = DialogResult.Cancel
-
-                frm.Controls.Add(lst)
-                frm.Controls.Add(btnOK)
-                frm.Controls.Add(btnCancel)
-                frm.AcceptButton = btnOK
-                frm.CancelButton = btnCancel
-                frm.KeyPreview = True
-
-                AddHandler lst.DoubleClick, Sub(s, e)
-                                                frm.DialogResult = DialogResult.OK
-                                                frm.Close()
-                                            End Sub
-
-                AddHandler frm.KeyDown, Sub(s, e)
-                                            If e.KeyCode = Keys.Escape Then
-                                                e.Handled = True
-                                                frm.DialogResult = DialogResult.Cancel
-                                                frm.Close()
-                                            End If
-                                        End Sub
-
-                If frm.ShowDialog() <> DialogResult.OK Then Return -1
-                If lst.SelectedIndex < 0 Then Return -1
-                Return lst.SelectedIndex
-            Finally
-                If frm IsNot Nothing Then
-                    Try : frm.Dispose() : Catch : End Try
-                End If
             End Try
         End Function
 

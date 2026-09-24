@@ -3,6 +3,7 @@ Imports System.Windows.Forms
 Imports Inventor
 Imports Microsoft.VisualBasic
 Imports System.Globalization
+Imports Drw = System.Drawing
 
 Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
@@ -10,17 +11,7 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
         Public Sub OnExecute(ByVal Context As NameValueMap)
 
-            '==================================================
-            ' CHỌN ÁP DỤNG CHO
-            '==================================================
-            Dim targetIdx As Integer = PickFromList(
-                "Áp dụng kiểm tra / ghi chiều dày Sheet Metal",
-                New String() {
-                    "Chỉ Part Number",
-                    "Chỉ Stock Number",
-                    "Cả Part Number và Stock Number"
-                }, 2)
-
+            Dim targetIdx As Integer = ShowApplyTargetForm()
             If targetIdx < 0 Then Exit Sub
 
             Dim applyPN As Boolean = False
@@ -55,7 +46,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
                 For Each row As BOMRow In oBOMView.BOMRows
 
-                    ' Bỏ qua Reference + Phantom
                     If IsSkipped(row) Then Continue For
 
                     Dim refDoc As Document = Nothing
@@ -71,20 +61,17 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
                     Dim partDoc As PartDocument = CType(refDoc, PartDocument)
 
-                    ' Chỉ xử lý Sheet Metal
                     Dim smDef As SheetMetalComponentDefinition =
                         TryCast(partDoc.ComponentDefinition, SheetMetalComponentDefinition)
 
                     If smDef Is Nothing Then Continue For
 
 
-                    '----- Lấy chiều dày thật (mm) -----
                     Dim thickMM As Double = smDef.Thickness.Value * 10.0
                     Dim thickStr As String = FormatThickness(thickMM)
                     Dim newPrefix As String = "PL" & thickStr
 
 
-                    '----- Xử lý Part Number -----
                     If applyPN Then
                         Dim curPN As String = GetDesignProperty(partDoc, "Part Number")
                         Dim newPN As String = SmartUpdateThickness(curPN, newPrefix, thickMM)
@@ -98,7 +85,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
                     End If
 
 
-                    '----- Xử lý Stock Number -----
                     If applySN Then
                         Dim curSN As String = GetDesignProperty(partDoc, "Stock Number")
                         Dim newSN As String = SmartUpdateThickness(curSN, newPrefix, thickMM)
@@ -114,7 +100,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
                 Next
 
 
-                '----- Save các file đã sửa -----
                 For Each d As Document In listDocs
                     Try
                         If d.IsModifiable Then
@@ -129,7 +114,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
                 Try : oAsm.Update2(True) : Catch : End Try
 
 
-                '----- Thông báo -----
                 Dim msg As String =
                     "HOÀN TẤT – Sheet Metal Thickness" & vbCrLf &
                     "=================================" & vbCrLf &
@@ -147,29 +131,180 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
 
 
         '==========================================================
-        ' LOGIC THÔNG MINH GIỐNG LỰA CHỌN 4
-        ' - Chưa có → ghi "PL" + chiều dày
-        ' - Đã có "PL" + số:
-        '     + Đúng chiều dày → giữ nguyên (trả về chuỗi cũ)
-        '     + Sai chiều dày → chỉ sửa phần số, giữ phần còn lại
-        '       Ví dụ: PL4x6x7  + dày thật 4.6 → PL4.6x6x7
+        ' FORM — CARD RỘNG FULL
+        '==========================================================
+        Private Function ShowApplyTargetForm() As Integer
+            Dim result As Integer = -1
+
+            Using frm As New Form()
+                frm.Text = "Áp dụng kiểm tra / ghi chiều dày Sheet Metal"
+                frm.AutoScaleMode = AutoScaleMode.None
+                frm.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
+                frm.ClientSize = New Drw.Size(700, 500)
+                frm.FormBorderStyle = FormBorderStyle.FixedSingle
+                frm.StartPosition = FormStartPosition.CenterScreen
+                frm.MaximizeBox = False
+                frm.MinimizeBox = False
+                frm.ShowInTaskbar = False
+                frm.BackColor = Drw.Color.FromArgb(245, 245, 245)
+                frm.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                frm.Tag = -1
+
+                '===== HEADER =====
+                Dim pnlHeader As New Panel()
+                pnlHeader.Location = New Drw.Point(0, 0)
+                pnlHeader.Size = New Drw.Size(700, 80)
+                pnlHeader.BackColor = Drw.Color.FromArgb(45, 100, 180)
+                frm.Controls.Add(pnlHeader)
+
+                Dim lblTitle As New Label()
+                lblTitle.Text = "PL → PART NUMBER / STOCK NUMBER"
+                lblTitle.Font = New Drw.Font("Segoe UI", 14.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+                lblTitle.ForeColor = Drw.Color.White
+                lblTitle.Dock = DockStyle.Fill
+                lblTitle.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblTitle)
+
+                Dim lblSub As New Label()
+                lblSub.Text = "Kiểm tra & ghi chiều dày Sheet Metal vào property"
+                lblSub.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                lblSub.ForeColor = Drw.Color.FromArgb(220, 230, 245)
+                lblSub.Dock = DockStyle.Bottom
+                lblSub.Height = 22
+                lblSub.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblSub)
+
+                '===== HƯỚNG DẪN =====
+                Dim lblHint As New Label() With {
+                    .Text = "Chọn property sẽ ghi chiều dày tấm:",
+                    .Location = New Drw.Point(20, 100),
+                    .Size = New Drw.Size(660, 25),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(60, 60, 60)}
+                frm.Controls.Add(lblHint)
+
+                '===== 3 CARD — RỘNG FULL =====
+                AddCard(frm, 0,
+                        "Chỉ Part Number",
+                        "Ghi chiều dày vào Part Number. Ví dụ: PL4.5x6x7",
+                        130)
+
+                AddCard(frm, 1,
+                        "Chỉ Stock Number",
+                        "Ghi chiều dày vào Stock Number. Giữ nguyên Part Number",
+                        220)
+
+                AddCard(frm, 2,
+                        "Cả Part Number và Stock Number",
+                        "Ghi chiều dày vào cả 2 property. Khuyến nghị dùng cho đầy đủ thông tin",
+                        310)
+
+                '===== NÚT HỦY =====
+                Dim btnCancel As New Button()
+                btnCancel.Text = "HỦY"
+                btnCancel.Size = New Drw.Size(120, 42)
+                btnCancel.Location = New Drw.Point(560, 430)
+                btnCancel.FlatStyle = FlatStyle.Flat
+                btnCancel.FlatAppearance.BorderColor = Drw.Color.FromArgb(180, 180, 180)
+                btnCancel.BackColor = Drw.Color.FromArgb(245, 245, 245)
+                btnCancel.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                AddHandler btnCancel.Click, Sub()
+                                                frm.Tag = -1
+                                                frm.Close()
+                                            End Sub
+                frm.Controls.Add(btnCancel)
+                frm.CancelButton = btnCancel
+
+                frm.ShowDialog()
+                result = CInt(frm.Tag)
+            End Using
+
+            Return result
+        End Function
+
+
+        '==========================================================
+        ' THÊM CARD — RỘNG FULL (660px)
+        '==========================================================
+        Private Sub AddCard(ByVal frm As Form,
+                            ByVal value As Integer,
+                            ByVal title As String,
+                            ByVal desc As String,
+                            ByVal top As Integer)
+
+            Dim cardLeft As Integer = 20
+            Dim cardWidth As Integer = 660
+            Dim cardHeight As Integer = 75
+
+            Dim pnl As New Panel()
+            pnl.Location = New Drw.Point(cardLeft, top)
+            pnl.Size = New Drw.Size(cardWidth, cardHeight)
+            pnl.BackColor = Drw.Color.White
+            pnl.BorderStyle = BorderStyle.FixedSingle
+            pnl.Cursor = Cursors.Hand
+            frm.Controls.Add(pnl)
+
+            '--- Tiêu đề ---
+            Dim lblTitle As New Label()
+            lblTitle.Text = title
+            lblTitle.Font = New Drw.Font("Segoe UI", 11.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            lblTitle.ForeColor = Drw.Color.FromArgb(30, 30, 30)
+            lblTitle.Location = New Drw.Point(25, 15)
+            lblTitle.Size = New Drw.Size(cardWidth - 40, 25)
+            pnl.Controls.Add(lblTitle)
+
+            '--- Mô tả ---
+            Dim lblDesc As New Label()
+            lblDesc.Text = desc
+            lblDesc.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            lblDesc.ForeColor = Drw.Color.FromArgb(110, 110, 110)
+            lblDesc.Location = New Drw.Point(25, 42)
+            lblDesc.Size = New Drw.Size(cardWidth - 40, 22)
+            pnl.Controls.Add(lblDesc)
+
+            '--- Hover ---
+            Dim hoverOn As EventHandler = Sub()
+                                              pnl.BackColor = Drw.Color.FromArgb(235, 242, 252)
+                                          End Sub
+            Dim hoverOff As EventHandler = Sub()
+                                               pnl.BackColor = Drw.Color.White
+                                           End Sub
+
+            AddHandler pnl.MouseEnter, hoverOn
+            AddHandler pnl.MouseLeave, hoverOff
+            AddHandler lblTitle.MouseEnter, hoverOn
+            AddHandler lblTitle.MouseLeave, hoverOff
+            AddHandler lblDesc.MouseEnter, hoverOn
+            AddHandler lblDesc.MouseLeave, hoverOff
+
+            '--- Click ---
+            Dim clickH As EventHandler = Sub(sender, e)
+                                             frm.Tag = value
+                                             frm.DialogResult = DialogResult.OK
+                                             frm.Close()
+                                         End Sub
+            AddHandler pnl.Click, clickH
+            AddHandler lblTitle.Click, clickH
+            AddHandler lblDesc.Click, clickH
+        End Sub
+
+
+        '==========================================================
+        ' LOGIC — GIỮ NGUYÊN
         '==========================================================
         Private Function SmartUpdateThickness(current As String, newPrefix As String, realThick As Double) As String
 
             If current Is Nothing Then current = ""
             current = current.Trim()
 
-            ' Chưa có gì → ghi mới
             If current = "" Then
                 Return newPrefix
             End If
 
-            ' Không bắt đầu bằng PL → ghi đè
             If Not current.StartsWith("PL", StringComparison.OrdinalIgnoreCase) Then
                 Return newPrefix
             End If
 
-            ' Tách phần sau "PL"
             Dim afterPL As String = current.Substring(2)
             Dim oldThickStr As String = ""
             Dim rest As String = ""
@@ -181,35 +316,26 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
             End While
 
             If i < afterPL.Length Then
-                rest = afterPL.Substring(i)          ' ví dụ "x6x7"
+                rest = afterPL.Substring(i)
             End If
 
-            ' So sánh chiều dày
             Dim oldThick As Double = 0
             Double.TryParse(oldThickStr, NumberStyles.Any, CultureInfo.InvariantCulture, oldThick)
 
             If Math.Abs(oldThick - realThick) < 0.001 Then
-                ' Đúng → giữ nguyên
                 Return current
             Else
-                ' Sai → sửa phần dày, giữ phần còn lại
                 Return newPrefix & rest
             End If
 
         End Function
 
 
-        '==========================================================
-        ' FORMAT CHIỀU DÀY
-        '==========================================================
         Private Function FormatThickness(value As Double) As String
             Return value.ToString("0.###", CultureInfo.InvariantCulture)
         End Function
 
 
-        '==========================================================
-        ' BỎ QUA Reference + Phantom
-        '==========================================================
         Private Function IsSkipped(row As BOMRow) As Boolean
             Try
                 If row.BOMStructure = BOMStructureEnum.kReferenceBOMStructure Then Return True
@@ -220,9 +346,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
         End Function
 
 
-        '==========================================================
-        ' DESIGN TRACKING PROPERTY
-        '==========================================================
         Private Function GetDesignProperty(doc As Document, propName As String) As String
             Try
                 If doc Is Nothing Then Return ""
@@ -261,86 +384,6 @@ Namespace ToolInventor2025.Assembly2.Buttons.BOMcode
                 End Try
             Catch
                 Return False
-            End Try
-        End Function
-
-
-        '==========================================================
-        ' PICK LIST
-        '==========================================================
-        Private Function PickFromList(title As String, items As String(),
-                                      Optional defaultIndex As Integer = 0) As Integer
-
-            Dim frm As New Form()
-            Try
-                frm.Text = title
-                frm.StartPosition = FormStartPosition.CenterScreen
-                frm.FormBorderStyle = FormBorderStyle.FixedDialog
-                frm.MaximizeBox = False
-                frm.MinimizeBox = False
-                frm.ShowInTaskbar = False
-                frm.Width = 420
-                frm.Height = 280
-
-                Dim lst As New ListBox()
-                lst.Left = 12 : lst.Top = 12
-                lst.Width = 380 : lst.Height = 170
-                lst.Font = New System.Drawing.Font("Segoe UI", 10)
-
-                For Each s As String In items
-                    lst.Items.Add(s)
-                Next
-
-                If lst.Items.Count > 0 Then
-                    If defaultIndex >= 0 AndAlso defaultIndex < lst.Items.Count Then
-                        lst.SelectedIndex = defaultIndex
-                    Else
-                        lst.SelectedIndex = 0
-                    End If
-                End If
-
-                Dim btnOK As New Button()
-                btnOK.Text = "OK"
-                btnOK.Left = 200 : btnOK.Top = 195
-                btnOK.Width = 90 : btnOK.Height = 30
-                btnOK.DialogResult = DialogResult.OK
-
-                Dim btnCancel As New Button()
-                btnCancel.Text = "Hủy"
-                btnCancel.Left = 300 : btnCancel.Top = 195
-                btnCancel.Width = 90 : btnCancel.Height = 30
-                btnCancel.DialogResult = DialogResult.Cancel
-
-                frm.Controls.Add(lst)
-                frm.Controls.Add(btnOK)
-                frm.Controls.Add(btnCancel)
-                frm.AcceptButton = btnOK
-                frm.CancelButton = btnCancel
-                frm.KeyPreview = True
-
-                AddHandler lst.DoubleClick,
-                    Sub(s, e)
-                        frm.DialogResult = DialogResult.OK
-                        frm.Close()
-                    End Sub
-
-                AddHandler frm.KeyDown,
-                    Sub(s, e)
-                        If e.KeyCode = Keys.Escape Then
-                            e.Handled = True
-                            frm.DialogResult = DialogResult.Cancel
-                            frm.Close()
-                        End If
-                    End Sub
-
-                If frm.ShowDialog() <> DialogResult.OK Then Return -1
-                If lst.SelectedIndex < 0 Then Return -1
-                Return lst.SelectedIndex
-
-            Finally
-                If frm IsNot Nothing Then
-                    Try : frm.Dispose() : Catch : End Try
-                End If
             End Try
         End Function
 

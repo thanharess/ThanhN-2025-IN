@@ -187,7 +187,7 @@ Namespace ToolInventor2025
                                                                                     Nothing, "ấn chọn file part hoặc Assembly để hiện gốc tọa độ" & vbCrLf &
                                                                                    " tiếp theo dùng lệnh Constrain để lắp ghép với nhau." & vbCrLf &
                                                                                     "Nếu ấn ok thì sẽ ẩn hết các mặt phẳng & trục gốc tọa độ vừa ấn hiện", Ass2SmallIcon5, Ass2LargeIcon5)
-            AddHandler assemblyBtna5.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_5.OnExecute
+            'AddHandler assemblyBtna5.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_5.OnExecute
             ' buttonsList.Add(assemblyBtna5)
 
 
