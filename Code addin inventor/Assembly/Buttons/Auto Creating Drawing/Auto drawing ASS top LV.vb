@@ -3,19 +3,17 @@ Option Strict Off
 
 Imports Inventor
 Imports System.Windows.Forms
+Imports System.Drawing
 Imports System.Collections
 Imports System.Collections.Generic
+
 Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
+
     Public Module AutoDrawingASSTopLV
 
         Public Sub OnExecute(ByVal Context As NameValueMap)
-
             Dim app As Inventor.Application = g_inventorApplication
-
             Try
-                '=================================================
-                ' 0. KIỂM TRA ASSEMBLY
-                '=================================================
                 If app.ActiveDocument Is Nothing OrElse
                    app.ActiveDocument.DocumentType <> Inventor.DocumentTypeEnum.kAssemblyDocumentObject Then
                     MessageBox.Show("Vui lòng mở file .iam", "Lỗi",
@@ -26,9 +24,21 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                 Dim asmDoc As Inventor.AssemblyDocument =
                     CType(app.ActiveDocument, Inventor.AssemblyDocument)
 
-                '=================================================
-                ' 1. CHỌN FILE BẢN VẼ
-                '=================================================
+                '====== FORM OPTIONS ======
+                Dim opt As TopLVOptions
+                Using frm As New TopLVOptionsForm()
+                    If frm.ShowDialog() <> DialogResult.OK Then Exit Sub
+                    opt = frm.Options
+                End Using
+
+                Dim sheetSizeEnum As Inventor.DrawingSheetSizeEnum = opt.SheetSize
+                Dim userScale As Double = opt.Scale
+                Dim viewType As Integer = opt.ViewType
+                Dim itemsPerSheet As Integer = opt.ItemsPerSheet
+                Dim filterPurchased As Boolean = opt.FilterPurchased
+                Dim BOMcreate As Boolean = opt.CreateBOM
+
+                '====== CHỌN FILE BẢN VẼ ======
                 Dim oFileDlg As Inventor.FileDialog = Nothing
                 app.CreateFileDialog(oFileDlg)
                 oFileDlg.Filter = "Bản vẽ Inventor (*.idw)|*.idw"
@@ -48,84 +58,32 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                 Dim tg As Inventor.TransientGeometry = app.TransientGeometry
 
                 '=================================================
-                ' 2. TÙY CHỌN NGƯỜI DÙNG
-                '=================================================
-                Dim sheetSizeChoice As String = InputBox("Chọn khổ giấy: A2, A3 hoặc A4", "Khổ giấy", "A3")
-                Dim sheetSizeEnum As Inventor.DrawingSheetSizeEnum = Inventor.DrawingSheetSizeEnum.kA3DrawingSheetSize
-                If sheetSizeChoice <> "" Then
-                    Select Case sheetSizeChoice.Trim().ToUpper()
-                        Case "A2" : sheetSizeEnum = Inventor.DrawingSheetSizeEnum.kA2DrawingSheetSize
-                        Case "A4" : sheetSizeEnum = Inventor.DrawingSheetSizeEnum.kA4DrawingSheetSize
-                        Case "A0" : sheetSizeEnum = Inventor.DrawingSheetSizeEnum.kA0DrawingSheetSize
-                        Case "A1" : sheetSizeEnum = Inventor.DrawingSheetSizeEnum.kA1DrawingSheetSize
-                    End Select
-                End If
-
-                Dim scaleInput As String = InputBox("Nhập tỉ lệ view (ví dụ 20 = 1:20):", "Tỉ lệ", "20")
-                Dim userScale As Double = 1.0 / 20.0
-                Try : userScale = 1.0 / CDbl(scaleInput) : Catch : End Try
-
-                Dim viewTypeInput As String = InputBox(
-                    "Chọn kiểu view (1..4):" & vbCrLf &
-                    "1: Front" & vbCrLf &
-                    "2: Front + Right" & vbCrLf &
-                    "3: Front + Right + Iso" & vbCrLf &
-                    "4: Front + Top + Right + Iso",
-                    "Kiểu view", "3")
-                Dim viewType As Integer = 3
-                Try : viewType = CInt(viewTypeInput) : Catch : End Try
-                If viewType < 1 Or viewType > 4 Then viewType = 3
-
-                Dim itemsPerSheetInput As String = InputBox("Số cụm trên mỗi sheet:", "Chia cụm", "4")
-                Dim itemsPerSheet As Integer = 4
-                Try : itemsPerSheet = CInt(itemsPerSheetInput) : Catch : End Try
-                If itemsPerSheet < 1 Then itemsPerSheet = 1
-
-                Dim filterPurchased As Boolean =
-                    (MessageBox.Show("Bỏ qua Purchased / Phantom / Reference?", "Bộ lọc",
-                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes)
-
-                Dim BOMcreate As Boolean =
-                    (MessageBox.Show("Tạo BOM?", "BOM",
-                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes)
-
-                '=================================================
-                ' 3. THU THẬP CỤM (top + sub) – LỌC TRÙNG PN
+                ' 3. THU THẬP CỤM
                 '=================================================
                 Dim allAssemblies As New List(Of Inventor.AssemblyDocument)
                 Dim usedPN As New Hashtable()
-
                 allAssemblies.Add(asmDoc)
                 MarkUsed(usedPN, asmDoc)
 
                 For Each occ As Inventor.ComponentOccurrence In asmDoc.ComponentDefinition.Occurrences
                     Try
                         Dim refDoc As Inventor.Document = occ.Definition.Document
-                        If refDoc.DocumentType <> Inventor.DocumentTypeEnum.kAssemblyDocumentObject Then
-                            Continue For
-                        End If
+                        If refDoc.DocumentType <> Inventor.DocumentTypeEnum.kAssemblyDocumentObject Then Continue For
 
                         Dim Skip As Boolean = False
-
                         If filterPurchased Then
                             Try
                                 Dim bs As Inventor.BOMStructureEnum = occ.BOMStructure
                                 If bs = Inventor.BOMStructureEnum.kPurchasedBOMStructure OrElse
                                    bs = Inventor.BOMStructureEnum.kPhantomBOMStructure OrElse
-                                   bs = Inventor.BOMStructureEnum.kReferenceBOMStructure Then
-                                    Skip = True
-                                End If
+                                   bs = Inventor.BOMStructureEnum.kReferenceBOMStructure Then Skip = True
                             Catch
                             End Try
                         End If
-
                         If Skip Then Continue For
 
                         Dim subAsm As Inventor.AssemblyDocument = CType(refDoc, Inventor.AssemblyDocument)
-
-                        ' Lọc trùng Part Number
                         If AlreadyUsed(usedPN, subAsm) Then Continue For
-
                         allAssemblies.Add(subAsm)
                     Catch
                     End Try
@@ -148,7 +106,6 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                     Inventor.ViewOrientationTypeEnum.kFrontViewOrientation,
                     Inventor.DrawingViewStyleEnum.kHiddenLineRemovedDrawingViewStyle)
                 baseView.ShowLabel = True
-
                 AddProjectedViews(asmSheet, baseView, viewType, centerX, centerY, asmSheet.Width, asmSheet.Height, tg)
 
                 If BOMcreate Then
@@ -156,7 +113,7 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                 End If
 
                 '=================================================
-                ' 5. SHEET CỤM CON (nhiều cụm / sheet)
+                ' 5. SHEET CỤM CON
                 '=================================================
                 Dim sheet As Inventor.Sheet = Nothing
                 Dim sheetWidth, sheetHeight, usableW, usableH, xStart, yStart, xStep, yStep As Double
@@ -179,7 +136,6 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                         usableH = sheetHeight / 4.0 * 3.0
                         xStart = sheetWidth / 3.0
                         yStart = sheetHeight / 5.0 * 4.0
-
                         cols = If(itemsPerSheet = 1, 1, 2)
                         Dim rowsNeeded As Integer = CInt(Math.Ceiling(itemsPerSheet / CDbl(cols)))
                         xStep = usableW / cols
@@ -198,21 +154,19 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                     baseViewSub.ShowLabel = True
 
                     If viewType >= 2 Then
-                        Dim rightPt As Inventor.Point2d = tg.CreatePoint2d(xPos + xStep * 0.4, yPos)
                         Dim rightView As Inventor.DrawingView = sheet.DrawingViews.AddProjectedView(
-                            baseViewSub, rightPt,
+                            baseViewSub, tg.CreatePoint2d(xPos + xStep * 0.4, yPos),
                             Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseViewSub.Scale)
                         rightView.ShowLabel = True
                     End If
                     If viewType = 3 OrElse viewType = 4 Then
-                        Dim isoPt As Inventor.Point2d = tg.CreatePoint2d(xPos + xStep * 0.4, yPos - yStep * 0.4)
-                        sheet.DrawingViews.AddProjectedView(baseViewSub, isoPt,
+                        sheet.DrawingViews.AddProjectedView(baseViewSub,
+                            tg.CreatePoint2d(xPos + xStep * 0.4, yPos - yStep * 0.4),
                             Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseViewSub.Scale)
                     End If
                     If viewType = 4 Then
-                        Dim topPt As Inventor.Point2d = tg.CreatePoint2d(xPos, yPos - yStep * 0.4)
                         Dim topView As Inventor.DrawingView = sheet.DrawingViews.AddProjectedView(
-                            baseViewSub, topPt,
+                            baseViewSub, tg.CreatePoint2d(xPos, yPos - yStep * 0.4),
                             Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseViewSub.Scale)
                         topView.ShowLabel = True
                     End If
@@ -229,33 +183,23 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                     If countOnSheet >= itemsPerSheet Then countOnSheet = 0
                 Next
 
-                '=================================================
-                ' 6. HOÀN TẤT
-                '=================================================
                 drawDoc.Update()
-                MessageBox.Show(
-                    "Đã tạo bản vẽ cho cụm tổng và " & globalCount.ToString() & " cụm con!",
-                    "Hoàn tất", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                MessageBox.Show("Đã tạo bản vẽ cho cụm tổng và " & globalCount & " cụm con!",
+                                "Hoàn tất", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
             Catch ex As Exception
                 MessageBox.Show("Lỗi:" & vbCrLf & ex.Message, "Lay cum lap",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
-
         End Sub
 
-        '=================================================
-        ' BORDER + KHUNG TÊN
-        '=================================================
-        Private Sub ApplyBorderAndTitleBlock(
-            drawDoc As Inventor.DrawingDocument,
-            sheet As Inventor.Sheet,
-            sizeEnum As Inventor.DrawingSheetSizeEnum)
-
+        '===== CÁC HÀM HELPER GIỮ NGUYÊN =====
+        Private Sub ApplyBorderAndTitleBlock(drawDoc As Inventor.DrawingDocument,
+                                             sheet As Inventor.Sheet,
+                                             sizeEnum As Inventor.DrawingSheetSizeEnum)
             Try
                 Dim borderName As String = ""
                 Dim titleName As String = ""
-
                 Select Case sizeEnum
                     Case Inventor.DrawingSheetSizeEnum.kA0DrawingSheetSize
                         borderName = "NT A0" : titleName = "Khung tên SX NT A0"
@@ -279,7 +223,6 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                     If sheet.TitleBlock IsNot Nothing Then sheet.TitleBlock.Delete()
                 Catch
                 End Try
-
                 Try
                     sheet.AddBorder(drawDoc.BorderDefinitions.Item(borderName))
                 Catch
@@ -287,7 +230,6 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                         Try : sheet.AddBorder(drawDoc.BorderDefinitions.Item("NT A4 D")) : Catch : End Try
                     End If
                 End Try
-
                 Try
                     sheet.AddTitleBlock(drawDoc.TitleBlockDefinitions.Item(titleName))
                 Catch
@@ -299,17 +241,12 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
             End Try
         End Sub
 
-        '=================================================
-        ' PARTS LIST
-        '=================================================
-        Private Sub AddPartsListSafe(
-            drawDoc As Inventor.DrawingDocument,
-            sheet As Inventor.Sheet,
-            baseView As Inventor.DrawingView,
-            sourceAsm As Inventor.AssemblyDocument,
-            tg As Inventor.TransientGeometry,
-            title As String)
-
+        Private Sub AddPartsListSafe(drawDoc As Inventor.DrawingDocument,
+                                     sheet As Inventor.Sheet,
+                                     baseView As Inventor.DrawingView,
+                                     sourceAsm As Inventor.AssemblyDocument,
+                                     tg As Inventor.TransientGeometry,
+                                     title As String)
             Try
                 Try
                     Dim bom As Inventor.BOM = sourceAsm.ComponentDefinition.BOM
@@ -341,29 +278,22 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
                 End Try
 
                 If pl Is Nothing Then Exit Sub
-
                 Try
                     If drawDoc.StylesManager.PartsListStyles.Count > 0 Then
-                        ' pl.Style = drawDoc.StylesManager.PartsListStyles.Item("TÊN_STYLE_CỦA_BẠN")
                         pl.Style = drawDoc.StylesManager.PartsListStyles.Item(1)
                     End If
                 Catch
                 End Try
-
                 Try
                     pl.Title = title
                     pl.ShowTitle = True
                 Catch
                 End Try
-
                 Try : pl.Renumber() : Catch : End Try
             Catch
             End Try
         End Sub
 
-        '=================================================
-        ' LỌC TRÙNG PART NUMBER
-        '=================================================
         Private Function GetPartNumber(doc As Inventor.Document) As String
             Try
                 Dim ps As Inventor.PropertySet = doc.PropertySets.Item("Design Tracking Properties")
@@ -397,37 +327,223 @@ Namespace ToolInventor2025.Assembly.Buttons.AutoCreateDrawing
             Return False
         End Function
 
-        '=================================================
-        ' PROJECTED VIEWS
-        '=================================================
-        Private Sub AddProjectedViews(
-            sheet As Inventor.Sheet,
-            baseView As Inventor.DrawingView,
-            viewType As Integer,
-            cx As Double, cy As Double,
-            sheetW As Double, sheetH As Double,
-            tg As Inventor.TransientGeometry)
-
+        Private Sub AddProjectedViews(sheet As Inventor.Sheet,
+                                      baseView As Inventor.DrawingView,
+                                      viewType As Integer,
+                                      cx As Double, cy As Double,
+                                      sheetW As Double, sheetH As Double,
+                                      tg As Inventor.TransientGeometry)
             If viewType >= 2 Then
-                Dim rightPt As Inventor.Point2d = tg.CreatePoint2d(cx + sheetW / 3.0, cy)
                 Dim rv As Inventor.DrawingView = sheet.DrawingViews.AddProjectedView(
-                    baseView, rightPt, Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseView.Scale)
+                    baseView, tg.CreatePoint2d(cx + sheetW / 3.0, cy),
+                    Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseView.Scale)
                 rv.ShowLabel = True
             End If
             If viewType = 3 OrElse viewType = 4 Then
-                Dim isoPt As Inventor.Point2d = tg.CreatePoint2d(cx + sheetW / 3.0, cy - sheetH / 3.0)
-                sheet.DrawingViews.AddProjectedView(baseView, isoPt,
+                sheet.DrawingViews.AddProjectedView(baseView,
+                    tg.CreatePoint2d(cx + sheetW / 3.0, cy - sheetH / 3.0),
                     Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseView.Scale)
             End If
             If viewType = 4 Then
-                Dim topPt As Inventor.Point2d = tg.CreatePoint2d(cx, cy - sheetH / 3.0)
                 Dim tv As Inventor.DrawingView = sheet.DrawingViews.AddProjectedView(
-                    baseView, topPt, Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseView.Scale)
+                    baseView, tg.CreatePoint2d(cx, cy - sheetH / 3.0),
+                    Inventor.DrawingViewStyleEnum.kFromBaseDrawingViewStyle, baseView.Scale)
                 tv.ShowLabel = True
             End If
         End Sub
 
     End Module
 
-End Namespace
 
+    '==========================================================
+    ' CLASS LƯU OPTIONS
+    '==========================================================
+    Public Class TopLVOptions
+        Public SheetSize As Inventor.DrawingSheetSizeEnum = Inventor.DrawingSheetSizeEnum.kA3DrawingSheetSize
+        Public Scale As Double = 1.0 / 20.0
+        Public ScaleInput As Integer = 20
+        Public ViewType As Integer = 3
+        Public ItemsPerSheet As Integer = 4
+        Public FilterPurchased As Boolean = True
+        Public CreateBOM As Boolean = True
+    End Class
+
+
+    '==========================================================
+    ' FORM OPTIONS — dạng bảng, không scale DPI
+    '==========================================================
+    Public Class TopLVOptionsForm
+        Inherits Form
+
+        Public Property Options As TopLVOptions
+
+        Private cboSize As ComboBox
+        Private txtScale As System.Windows.Forms.TextBox
+        Private cboView As ComboBox
+        Private txtItemsPerSheet As System.Windows.Forms.TextBox
+        Private chkFilter As CheckBox
+        Private chkBOM As CheckBox
+
+        Public Sub New()
+            Me.Text = "Tùy chọn — Drawing Top ASS"
+            Me.ClientSize = New Size(560, 500)
+            Me.FormBorderStyle = FormBorderStyle.FixedSingle
+            Me.StartPosition = FormStartPosition.CenterScreen
+            Me.MaximizeBox = False
+            Me.MinimizeBox = False
+            Me.AutoScaleMode = AutoScaleMode.None
+            Me.AutoScaleDimensions = New SizeF(96.0F, 96.0F)
+            Me.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular, GraphicsUnit.Point)
+            Me.BackColor = System.Drawing.Color.FromArgb(245, 245, 245)
+
+            '===== HEADER =====
+            Dim pnlHeader As New Panel()
+            pnlHeader.Dock = DockStyle.Top
+            pnlHeader.Height = 55
+            pnlHeader.BackColor = System.Drawing.Color.FromArgb(45, 100, 180)
+            Me.Controls.Add(pnlHeader)
+
+            Dim lblTitle As New Label()
+            lblTitle.Text = "DRAWING TOP ASS — TÙY CHỌN"
+            lblTitle.Font = New Font("Segoe UI", 12.0F, FontStyle.Bold, GraphicsUnit.Point)
+            lblTitle.ForeColor = System.Drawing.Color.White
+            lblTitle.Dock = DockStyle.Fill
+            lblTitle.TextAlign = ContentAlignment.MiddleCenter
+            pnlHeader.Controls.Add(lblTitle)
+
+            '===== BẢNG =====
+            Dim tbl As New TableLayoutPanel()
+            tbl.Location = New System.Drawing.Point(20, 75)
+            tbl.Size = New Size(520, 330)
+            tbl.ColumnCount = 2
+            tbl.RowCount = 6
+            tbl.BackColor = System.Drawing.Color.White
+            tbl.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single
+            tbl.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210))
+            tbl.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100))
+            For i As Integer = 0 To 5
+                tbl.RowStyles.Add(New RowStyle(SizeType.Absolute, 52))
+            Next
+            Me.Controls.Add(tbl)
+
+            ' Row 1 — Khổ giấy
+            tbl.Controls.Add(MakeLabel("Khổ giấy:"), 0, 0)
+            cboSize = New ComboBox() With {
+                .DropDownStyle = ComboBoxStyle.DropDownList,
+                .Width = 100, .Anchor = AnchorStyles.Left}
+            cboSize.Items.AddRange(New Object() {"A0", "A1", "A2", "A3", "A4"})
+            cboSize.SelectedIndex = 3
+            tbl.Controls.Add(cboSize, 1, 0)
+
+            ' Row 2 — Tỉ lệ
+            tbl.Controls.Add(MakeLabel("Tỉ lệ (20 = 1:20):"), 0, 1)
+            txtScale = New System.Windows.Forms.TextBox() With {.Text = "20", .Width = 100, .Anchor = AnchorStyles.Left}
+            tbl.Controls.Add(txtScale, 1, 1)
+
+            ' Row 3 — Kiểu view
+            tbl.Controls.Add(MakeLabel("Kiểu view:"), 0, 2)
+            cboView = New ComboBox() With {
+                .DropDownStyle = ComboBoxStyle.DropDownList,
+                .Width = 280, .Anchor = AnchorStyles.Left}
+            cboView.Items.AddRange(New Object() {
+                "1 - Front",
+                "2 - Front + Right",
+                "3 - Front + Right + Iso",
+                "4 - Front + Top + Right + Iso"})
+            cboView.SelectedIndex = 2
+            tbl.Controls.Add(cboView, 1, 2)
+
+            ' Row 4 — Số cụm/sheet
+            tbl.Controls.Add(MakeLabel("Số cụm trên mỗi sheet:"), 0, 3)
+            txtItemsPerSheet = New System.Windows.Forms.TextBox() With {.Text = "4", .Width = 100, .Anchor = AnchorStyles.Left}
+            tbl.Controls.Add(txtItemsPerSheet, 1, 3)
+
+            ' Row 5 — Bộ lọc
+            tbl.Controls.Add(MakeLabel("Bộ lọc:"), 0, 4)
+            chkFilter = New System.Windows.Forms.CheckBox() With {
+                .Text = "Bỏ qua Purchased / Phantom / Reference",
+                .Checked = True, .AutoSize = True, .Anchor = AnchorStyles.Left}
+            tbl.Controls.Add(chkFilter, 1, 4)
+
+            ' Row 6 — BOM
+            tbl.Controls.Add(MakeLabel("Bảng kê:"), 0, 5)
+            chkBOM = New CheckBox() With {
+                .Text = "Tạo BOM (Parts List)",
+                .Checked = True, .AutoSize = True, .Anchor = AnchorStyles.Left}
+            tbl.Controls.Add(chkBOM, 1, 5)
+
+            '===== NÚT =====
+            Dim btnOK As New Button()
+            btnOK.Text = "TẠO BẢN VẼ"
+            btnOK.Size = New Size(150, 40)
+            btnOK.Location = New System.Drawing.Point(230, 435)
+            btnOK.BackColor = System.Drawing.Color.FromArgb(45, 100, 180)
+            btnOK.ForeColor = System.Drawing.Color.White
+            btnOK.FlatStyle = FlatStyle.Flat
+            btnOK.Font = New Font("Segoe UI", 10.0F, FontStyle.Bold, GraphicsUnit.Point)
+            AddHandler btnOK.Click, AddressOf OnOKClick
+            Me.Controls.Add(btnOK)
+
+            Dim btnCancel As New Button()
+            btnCancel.Text = "HỦY"
+            btnCancel.Size = New Size(100, 40)
+            btnCancel.Location = New System.Drawing.Point(400, 435)
+            btnCancel.FlatStyle = FlatStyle.Flat
+            AddHandler btnCancel.Click, Sub()
+                                            Me.DialogResult = DialogResult.Cancel
+                                            Me.Close()
+                                        End Sub
+            Me.Controls.Add(btnCancel)
+            Me.AcceptButton = btnOK
+            Me.CancelButton = btnCancel
+        End Sub
+
+        Private Function MakeLabel(ByVal text As String) As Label
+            Dim lbl As New Label()
+            lbl.Text = text
+            lbl.Font = New Font("Segoe UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point)
+            lbl.TextAlign = ContentAlignment.MiddleLeft
+            lbl.Dock = DockStyle.Fill
+            lbl.Padding = New Padding(8, 0, 0, 0)
+            Return lbl
+        End Function
+
+        Private Sub OnOKClick(ByVal sender As Object, ByVal e As EventArgs)
+            Dim scaleVal As Double = 20
+            If Not Double.TryParse(txtScale.Text, scaleVal) OrElse scaleVal <= 0 Then
+                MessageBox.Show("Tỉ lệ không hợp lệ.", "Lỗi",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+
+            Dim itemsVal As Integer = 4
+            If Not Integer.TryParse(txtItemsPerSheet.Text, itemsVal) OrElse itemsVal < 1 Then
+                MessageBox.Show("Số cụm/sheet không hợp lệ.", "Lỗi",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+
+            Dim sheetEnum As Inventor.DrawingSheetSizeEnum
+            Select Case cboSize.SelectedIndex
+                Case 0 : sheetEnum = Inventor.DrawingSheetSizeEnum.kA0DrawingSheetSize
+                Case 1 : sheetEnum = Inventor.DrawingSheetSizeEnum.kA1DrawingSheetSize
+                Case 2 : sheetEnum = Inventor.DrawingSheetSizeEnum.kA2DrawingSheetSize
+                Case 4 : sheetEnum = Inventor.DrawingSheetSizeEnum.kA4DrawingSheetSize
+                Case Else : sheetEnum = Inventor.DrawingSheetSizeEnum.kA3DrawingSheetSize
+            End Select
+
+            Options = New TopLVOptions() With {
+                .SheetSize = sheetEnum,
+                .ScaleInput = CInt(scaleVal),
+                .Scale = 1.0 / scaleVal,
+                .ViewType = cboView.SelectedIndex + 1,
+                .ItemsPerSheet = itemsVal,
+                .FilterPurchased = chkFilter.Checked,
+                .CreateBOM = chkBOM.Checked
+            }
+            Me.DialogResult = DialogResult.OK
+            Me.Close()
+        End Sub
+    End Class
+
+End Namespace
