@@ -61,7 +61,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                 Dim appendNumber As Boolean = True
                 Dim startNum As Integer = 1
                 Dim padDigits As Integer = 2
-                Dim resetMode As Boolean = False
                 Dim customMode As Boolean = False
                 Dim customBaseName As String = ""
 
@@ -71,7 +70,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                                         appendNumber,
                                         startNum,
                                         padDigits,
-                                        resetMode,
                                         customMode,
                                         customBaseName) Then
                     Exit Sub
@@ -102,142 +100,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                 Dim nFail As Integer = 0
                 Dim log As New StringBuilder()
 
-                '=========================================================
-                ' ⭐ MODE RESET: Đổi về tên mặc định Sheet:1, Sheet:2...
-                '
-                ' Dùng 2 PASS để tránh trùng tên:
-                '   Pass 1: Đổi tất cả về temp name (__TEMP__xxx)
-                '   Pass 2: Đổi về tên mặc định theo vị trí thật
-                '=========================================================
-                If resetMode Then
-
-                    '--- Xác định danh sách sheet cần reset ---
-                    Dim targetSheets As New List(Of Sheet)
-                    Dim oldNames As New List(Of String)
-
-                    If allSheets Then
-                        For Each sh As Sheet In oDrawDoc.Sheets
-                            targetSheets.Add(sh)
-                            oldNames.Add(sh.Name)
-                        Next
-                    Else
-                        If oDrawDoc.ActiveSheet IsNot Nothing Then
-                            targetSheets.Add(oDrawDoc.ActiveSheet)
-                            oldNames.Add(oDrawDoc.ActiveSheet.Name)
-                        End If
-                    End If
-
-                    If targetSheets.Count = 0 Then
-                        MessageBox.Show("Không có sheet nào.", "Thông báo")
-                        Return
-                    End If
-
-                    '═════════════════════════════════════════════════
-                    ' RESET TOÀN BỘ — 2 pass
-                    '═════════════════════════════════════════════════
-                    If allSheets Then
-
-                        '--- PASS 1: Đổi tất cả về temp ---
-                        For i As Integer = 0 To targetSheets.Count - 1
-                            Try
-                                targetSheets(i).Name = "__TEMP__" &
-                                    System.Guid.NewGuid().ToString("N").Substring(0, 8)
-                            Catch
-                            End Try
-                        Next
-
-                        '--- PASS 2: Đổi về tên mặc định theo vị trí thật ---
-                        For i As Integer = 0 To targetSheets.Count - 1
-                            Dim sh As Sheet = targetSheets(i)
-
-                            '--- Xác định vị trí thật của sheet trong drawing ---
-                            Dim sheetIdx As Integer = 0
-                            For j As Integer = 1 To oDrawDoc.Sheets.Count
-                                If oDrawDoc.Sheets.Item(j) Is sh Then
-                                    sheetIdx = j
-                                    Exit For
-                                End If
-                            Next
-
-                            If sheetIdx = 0 Then
-                                nFail += 1
-                                log.AppendLine("  ✘ " & oldNames(i) & ": không xác định được vị trí")
-                                Continue For
-                            End If
-
-                            Dim newName As String = "Sheet:" & sheetIdx.ToString()
-
-                            Try
-                                sh.Name = newName
-                                nOK += 1
-                                log.AppendLine("  ✔ " & oldNames(i) & "  →  " & newName)
-                            Catch ex As Exception
-                                nFail += 1
-                                log.AppendLine("  ✘ " & oldNames(i) & ": " & ex.Message)
-                            End Try
-                        Next
-
-                        '═════════════════════════════════════════════════
-                        ' RESET CHỈ 1 SHEET
-                        '═════════════════════════════════════════════════
-                    Else
-
-                        Dim sh As Sheet = targetSheets(0)
-
-                        '--- Xác định vị trí thật của sheet ---
-                        Dim sheetIdx As Integer = 0
-                        For j As Integer = 1 To oDrawDoc.Sheets.Count
-                            If oDrawDoc.Sheets.Item(j) Is sh Then
-                                sheetIdx = j
-                                Exit For
-                            End If
-                        Next
-
-                        If sheetIdx = 0 Then
-                            MessageBox.Show("Không xác định được vị trí sheet.", "Lỗi",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                            Return
-                        End If
-
-                        Dim newName As String = "Sheet:" & sheetIdx.ToString()
-
-                        '--- Nếu trùng tên với sheet khác → thêm suffix ---
-                        If IsNameTaken(oDrawDoc, sh, newName) Then
-                            Dim suffix As Integer = 1
-                            Dim candidate As String = newName & "_" & suffix.ToString()
-                            While IsNameTaken(oDrawDoc, sh, candidate) AndAlso suffix < 100
-                                suffix += 1
-                                candidate = newName & "_" & suffix.ToString()
-                            End While
-                            log.AppendLine("  ⚠ Trùng → " & candidate)
-                            newName = candidate
-                        End If
-
-                        Try
-                            sh.Name = newName
-                            nOK += 1
-                            log.AppendLine("  ✔ " & oldNames(0) & "  →  " & newName)
-                        Catch ex As Exception
-                            nFail += 1
-                            log.AppendLine("  ✘ " & oldNames(0) & ": " & ex.Message)
-                        End Try
-                    End If
-
-                    Try : oDrawDoc.Update() : Catch : End Try
-
-                    MessageBox.Show(
-                        "Hoàn tất reset tên sheet!" & vbCrLf & vbCrLf &
-                        "Phạm vi  : " & If(allSheets, "Tất cả sheet", "Sheet đang mở") & vbCrLf &
-                        "Đã đổi   : " & nOK.ToString() & " / " & targetSheets.Count.ToString() & vbCrLf &
-                        "Lỗi      : " & nFail.ToString() & vbCrLf & vbCrLf &
-                        "--- Chi tiết ---" & vbCrLf &
-                        log.ToString(),
-                        "Reset tên sheet",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information)
-
-                    Return
-                End If
                 '=========================================================
                 ' MODE ĐỔI TÊN (Property hoặc Tự đặt)
                 '=========================================================
@@ -354,7 +216,6 @@ Namespace ToolInventor2025.Drawing.Buttons
             ByRef appendNumber As Boolean,
             ByRef startNum As Integer,
             ByRef padDigits As Integer,
-            ByRef resetMode As Boolean,
             ByRef customMode As Boolean,
             ByRef customBaseName As String) As Boolean
 
@@ -362,7 +223,7 @@ Namespace ToolInventor2025.Drawing.Buttons
                 .Text = "Đổi tên sheet",
                 .AutoScaleMode = AutoScaleMode.None,
                 .AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F),
-                .ClientSize = New Drw.Size(620, 800),
+                .ClientSize = New Drw.Size(620, 720),
                 .StartPosition = FormStartPosition.CenterScreen,
                 .FormBorderStyle = FormBorderStyle.FixedSingle,
                 .MaximizeBox = False,
@@ -388,7 +249,7 @@ Namespace ToolInventor2025.Drawing.Buttons
                 .TextAlign = Drw.ContentAlignment.MiddleCenter
             }
             Dim lblSub As New Label With {
-                .Text = "Đặt tên theo Property, Tự đặt hoặc Reset về mặc định",
+                .Text = "Đặt tên theo Property hoặc Tự đặt",
                 .Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point),
                 .ForeColor = Drw.Color.FromArgb(220, 230, 245),
                 .Dock = DockStyle.Bottom,
@@ -400,12 +261,12 @@ Namespace ToolInventor2025.Drawing.Buttons
             frm.Controls.Add(pnlHeader)
 
             '=========================================================
-            ' GROUP 1: CHẾ ĐỘ (3 lựa chọn)
+            ' GROUP 1: CHẾ ĐỘ (2 lựa chọn)
             '=========================================================
             Dim gbMode As New GroupBox With {
                 .Text = "1. Chế độ",
                 .Location = New Drw.Point(15, 80),
-                .Size = New Drw.Size(590, 165),
+                .Size = New Drw.Size(590, 130),
                 .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
                 .ForeColor = Drw.Color.FromArgb(45, 100, 180),
                 .BackColor = Drw.Color.White
@@ -439,18 +300,10 @@ Namespace ToolInventor2025.Drawing.Buttons
                 .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
             }
 
-            Dim rbReset As New RadioButton With {
-                .Text = "Reset về tên mặc định   (Sheet:1, Sheet:2, ...)",
-                .Location = New Drw.Point(20, 128),
-                .Size = New Drw.Size(550, 25),
-                .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
-            }
-
             gbMode.Controls.Add(rbNormal)
             gbMode.Controls.Add(rbCustom)
             gbMode.Controls.Add(lblCustom)
             gbMode.Controls.Add(txtCustom)
-            gbMode.Controls.Add(rbReset)
             frm.Controls.Add(gbMode)
 
             '=========================================================
@@ -458,7 +311,7 @@ Namespace ToolInventor2025.Drawing.Buttons
             '=========================================================
             Dim gbScope As New GroupBox With {
                 .Text = "2. Phạm vi",
-                .Location = New Drw.Point(15, 255),
+                .Location = New Drw.Point(15, 220),
                 .Size = New Drw.Size(590, 65),
                 .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
                 .ForeColor = Drw.Color.FromArgb(45, 100, 180),
@@ -486,7 +339,7 @@ Namespace ToolInventor2025.Drawing.Buttons
             '=========================================================
             Dim gbSrc As New GroupBox With {
                 .Text = "3. Nguồn đặt tên  (chỉ dùng cho chế độ Property)",
-                .Location = New Drw.Point(15, 330),
+                .Location = New Drw.Point(15, 295),
                 .Size = New Drw.Size(590, 220),
                 .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
                 .ForeColor = Drw.Color.FromArgb(45, 100, 180),
@@ -511,8 +364,8 @@ Namespace ToolInventor2025.Drawing.Buttons
             ' GROUP 4: HẬU TỐ SỐ
             '=========================================================
             Dim gbSuffix As New GroupBox With {
-                .Text = "4. Hậu tố số  (không dùng cho chế độ Reset)",
-                .Location = New Drw.Point(15, 560),
+                .Text = "4. Hậu tố số",
+                .Location = New Drw.Point(15, 525),
                 .Size = New Drw.Size(590, 125),
                 .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
                 .ForeColor = Drw.Color.FromArgb(45, 100, 180),
@@ -523,13 +376,14 @@ Namespace ToolInventor2025.Drawing.Buttons
                 .Text = "Có số   (""ABC-123 01"", ""ABC-123 02"", ...)",
                 .Location = New Drw.Point(20, 25),
                 .Size = New Drw.Size(400, 25),
-                .Checked = True,
+                .Checked = False,
                 .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
             }
             Dim rbNo As New RadioButton With {
                 .Text = "Không số   (chỉ ""ABC-123"")",
                 .Location = New Drw.Point(20, 50),
                 .Size = New Drw.Size(400, 25),
+                  .Checked = True,            ' ← THÊM DÒNG NÀY
                 .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
             }
 
@@ -574,7 +428,7 @@ Namespace ToolInventor2025.Drawing.Buttons
             Dim btnOK As New Button()
             btnOK.Text = "THỰC HIỆN"
             btnOK.Size = New Drw.Size(160, 44)
-            btnOK.Location = New Drw.Point(435, 725)
+            btnOK.Location = New Drw.Point(435, 665)
             btnOK.FlatStyle = FlatStyle.Flat
             btnOK.FlatAppearance.BorderSize = 0
             btnOK.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(60, 115, 195)
@@ -589,7 +443,7 @@ Namespace ToolInventor2025.Drawing.Buttons
             Dim btnCancel As New Button()
             btnCancel.Text = "HỦY"
             btnCancel.Size = New Drw.Size(130, 44)
-            btnCancel.Location = New Drw.Point(295, 725)
+            btnCancel.Location = New Drw.Point(295, 665)
             btnCancel.FlatStyle = FlatStyle.Flat
             btnCancel.FlatAppearance.BorderSize = 1
             btnCancel.FlatAppearance.BorderColor = Drw.Color.FromArgb(200, 200, 200)
@@ -609,7 +463,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                 Sub()
                     Dim isNormal As Boolean = rbNormal.Checked
                     Dim isCustom As Boolean = rbCustom.Checked
-                    Dim isReset As Boolean = rbReset.Checked
 
                     ' Nhóm 3 — chỉ dùng cho chế độ Property
                     gbSrc.Enabled = isNormal
@@ -619,11 +472,8 @@ Namespace ToolInventor2025.Drawing.Buttons
                     txtCustom.Enabled = isCustom
                     lblCustom.Enabled = isCustom
 
-                    ' Nhóm 4 — dùng cho chế độ Property và Tự đặt (không dùng cho Reset)
-                    gbSuffix.Enabled = (isNormal OrElse isCustom)
-
                     ' Ô số — chỉ dùng khi chọn "Có số"
-                    Dim hasSuffix As Boolean = (isNormal OrElse isCustom) AndAlso rbYes.Checked
+                    Dim hasSuffix As Boolean = rbYes.Checked
                     txtStart.Enabled = hasSuffix
                     txtPad.Enabled = hasSuffix
                     lblStart.Enabled = hasSuffix
@@ -633,7 +483,6 @@ Namespace ToolInventor2025.Drawing.Buttons
 
             AddHandler rbNormal.CheckedChanged, Sub() updateEnable()
             AddHandler rbCustom.CheckedChanged, Sub() updateEnable()
-            AddHandler rbReset.CheckedChanged, Sub() updateEnable()
             AddHandler rbYes.CheckedChanged, Sub() updateEnable()
             AddHandler rbNo.CheckedChanged, Sub() updateEnable()
             updateEnable()
@@ -643,13 +492,11 @@ Namespace ToolInventor2025.Drawing.Buttons
             '=========================================================
             Dim okClicked As Boolean = False
 
-            ' Biến tạm (local) — lambda capture được
             Dim tmpAllSheets As Boolean = True
             Dim tmpSourceName As String = "Part Number"
             Dim tmpAppendNumber As Boolean = True
             Dim tmpStartNum As Integer = 1
             Dim tmpPadDigits As Integer = 2
-            Dim tmpResetMode As Boolean = False
             Dim tmpCustomMode As Boolean = False
             Dim tmpCustomBaseName As String = "Sheet"
 
@@ -658,8 +505,8 @@ Namespace ToolInventor2025.Drawing.Buttons
                     Dim sn As Integer = 1
                     Dim pd As Integer = 2
 
-                    ' Validate số nếu chế độ cần hậu tố số
-                    If (rbNormal.Checked OrElse rbCustom.Checked) AndAlso rbYes.Checked Then
+                    ' Validate số nếu chọn hậu tố số
+                    If rbYes.Checked Then
                         If Not Integer.TryParse(txtStart.Text.Trim(), sn) Then
                             MessageBox.Show("Số bắt đầu không hợp lệ.", "Lỗi",
                                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -680,7 +527,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                         Return
                     End If
 
-                    ' Gán vào biến TẠM (không phải ByRef)
                     tmpAllSheets = rbAll.Checked
                     If lbSrc.SelectedItem IsNot Nothing Then
                         tmpSourceName = lbSrc.SelectedItem.ToString()
@@ -688,7 +534,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                     tmpAppendNumber = rbYes.Checked
                     tmpStartNum = sn
                     tmpPadDigits = pd
-                    tmpResetMode = rbReset.Checked
                     tmpCustomMode = rbCustom.Checked
                     tmpCustomBaseName = txtCustom.Text.Trim()
 
@@ -719,7 +564,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                 appendNumber = tmpAppendNumber
                 startNum = tmpStartNum
                 padDigits = tmpPadDigits
-                resetMode = tmpResetMode
                 customMode = tmpCustomMode
                 customBaseName = tmpCustomBaseName
             End If

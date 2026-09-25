@@ -10,7 +10,7 @@ Imports System.Runtime.InteropServices
 Namespace ToolInventor2025.Drawing.Buttons
 
     '=============================================================
-    ' SHEET NAVIGATOR BUTTON
+    ' SHEET NAVIGATOR BUTTON — 1 hàng, padding 5px, form 220px
     '=============================================================
     Public Module Draw_7
 
@@ -72,7 +72,7 @@ Namespace ToolInventor2025.Drawing.Buttons
 
 
     '=============================================================
-    ' SHEET NAVIGATOR FORM
+    ' SHEET NAVIGATOR FORM — 220px
     '=============================================================
     Public Class ThanhNSheetNavigatorForm
         Inherits System.Windows.Forms.Form
@@ -94,7 +94,6 @@ Namespace ToolInventor2025.Drawing.Buttons
         Private ReadOnly invApp As Inventor.Application
 
         '--- Controls ---
-        Private lblInfo As Label
         Private txtPage As System.Windows.Forms.TextBox
         Private btnFirst As Button
         Private btnPrev As Button
@@ -112,15 +111,19 @@ Namespace ToolInventor2025.Drawing.Buttons
         Private lastDocPath As String = ""
         Private lastScreenDeviceName As String = ""
 
-        '--- Cờ đang trong quá trình chuyển sheet ---
+        '--- Cờ ---
         Private transitioning As Boolean = False
 
+        '--- Kích thước ---
+        Private Const PAD As Integer = 5
+        Private Const BTN_H As Integer = 20
+
         '=========================================================
-        ' SHOW WITHOUT ACTIVATION — chỉ lần đầu, tránh cướp focus
+        ' SHOW WITHOUT ACTIVATION
         '=========================================================
         Protected Overrides ReadOnly Property ShowWithoutActivation As Boolean
             Get
-                Return False    ' ⭐ Cho phép activate — cần cho textbox
+                Return False
             End Get
         End Property
 
@@ -138,11 +141,11 @@ Namespace ToolInventor2025.Drawing.Buttons
 
             invApp = app
 
-            '--- Form setup ---
+            '--- Form setup — 220×30 với padding 5px ---
             Me.Text = ""
             Me.AutoScaleMode = AutoScaleMode.None
             Me.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
-            Me.ClientSize = New Drw.Size(232, 74)
+            Me.ClientSize = New Drw.Size(220, 30)          ' ⭐ 220px
             Me.FormBorderStyle = FormBorderStyle.None
             Me.StartPosition = FormStartPosition.Manual
             Me.ShowInTaskbar = False
@@ -150,7 +153,8 @@ Namespace ToolInventor2025.Drawing.Buttons
             Me.KeyPreview = True
             Me.BackColor = Drw.Color.FromArgb(45, 45, 48)
             Me.ForeColor = Drw.Color.White
-            Me.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            Me.Font = New Drw.Font("Segoe UI", 6.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            Me.Opacity = 0.75
 
             BuildUI()
             UpdateInfo(True)
@@ -169,7 +173,7 @@ Namespace ToolInventor2025.Drawing.Buttons
         End Sub
 
         '=========================================================
-        ' ⭐ ĐẶT VỊ TRÍ SAU KHI FORM HIỆN (handle đã tồn tại)
+        ' ĐẶT VỊ TRÍ SAU KHI FORM HIỆN
         '=========================================================
         Protected Overrides Sub OnShown(ByVal e As EventArgs)
             MyBase.OnShown(e)
@@ -177,87 +181,100 @@ Namespace ToolInventor2025.Drawing.Buttons
         End Sub
 
         '=========================================================
-        ' BUILD UI
+        ' BUILD UI — 1 HÀNG, FORM 220px
+        '
+        ' Layout:
+        '   [5]  |< [3] < [3] [N]  [3] OK [3] > [3] >| [9] ✕ [5]
         '=========================================================
         Private Sub BuildUI()
 
-            '═════════════════════════════════════════════════════
-            ' HÀNG 1: INFO + CLOSE
-            '═════════════════════════════════════════════════════
-            lblInfo = New Label()
-            lblInfo.Text = "Sheet 1/1"
-            lblInfo.Location = New Drw.Point(10, 6)
-            lblInfo.Size = New Drw.Size(250, 22)
-            lblInfo.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
-            lblInfo.ForeColor = Drw.Color.FromArgb(220, 230, 245)
-            lblInfo.TextAlign = Drw.ContentAlignment.MiddleLeft
-            Me.Controls.Add(lblInfo)
-
-            btnClose = New Button()
-            btnClose.Text = "✕"
-            btnClose.Location = New Drw.Point(266, 5)
-            btnClose.Size = New Drw.Size(22, 22)
-            ApplyToolbarButtonStyle(btnClose)
-            btnClose.ForeColor = Drw.Color.FromArgb(255, 180, 180)
-            btnClose.Font = New Drw.Font("Segoe UI", 8.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
-            Me.Controls.Add(btnClose)
+            Dim yBtn As Integer = PAD                       ' = 5
+            Dim x As Integer = PAD                          ' = 5
 
             '═════════════════════════════════════════════════════
-            ' HÀNG 2: NAVIGATOR
-            ' |<   <   [ 1 ]   [ OK ]   >   >|
+            ' NÚT |<
             '═════════════════════════════════════════════════════
-            Dim yBtn As Integer = 36
-            Dim btnH As Integer = 28
-
             btnFirst = New Button()
             btnFirst.Text = "|<"
-            btnFirst.Location = New Drw.Point(10, yBtn)
-            btnFirst.Size = New Drw.Size(38, btnH)
+            btnFirst.Location = New Drw.Point(x, yBtn)
+            btnFirst.Size = New Drw.Size(22, BTN_H)
             ApplyToolbarButtonStyle(btnFirst)
             Me.Controls.Add(btnFirst)
+            x += 22 + 3                                     ' = 30
 
+            '═════════════════════════════════════════════════════
+            ' NÚT <
+            '═════════════════════════════════════════════════════
             btnPrev = New Button()
             btnPrev.Text = "<"
-            btnPrev.Location = New Drw.Point(52, yBtn)
-            btnPrev.Size = New Drw.Size(38, btnH)
+            btnPrev.Location = New Drw.Point(x, yBtn)
+            btnPrev.Size = New Drw.Size(22, BTN_H)
             ApplyToolbarButtonStyle(btnPrev)
             Me.Controls.Add(btnPrev)
+            x += 22 + 3                                     ' = 55
 
-            '--- Textbox nhập số sheet ---
+            '═════════════════════════════════════════════════════
+            ' TEXTBOX — rộng 56 (thay vì 46)
+            '═════════════════════════════════════════════════════
             txtPage = New System.Windows.Forms.TextBox()
-            txtPage.Location = New Drw.Point(94, yBtn + 3)
-            txtPage.Size = New Drw.Size(48, 22)
+            txtPage.Location = New Drw.Point(x, yBtn + 2)
+            txtPage.Size = New Drw.Size(56, 15)
             txtPage.TextAlign = HorizontalAlignment.Center
-            txtPage.Font = New Drw.Font("Segoe UI", 10.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            txtPage.Font = New Drw.Font("Segoe UI", 6.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             txtPage.BackColor = Drw.Color.FromArgb(30, 30, 34)
             txtPage.ForeColor = Drw.Color.White
             txtPage.BorderStyle = BorderStyle.FixedSingle
             Me.Controls.Add(txtPage)
+            x += 56 + 3                                     ' = 114
 
-            '--- ⭐ Nút OK — chuyển sheet ---
+            '═════════════════════════════════════════════════════
+            ' NÚT OK
+            '═════════════════════════════════════════════════════
             Dim btnGo As New Button()
             btnGo.Text = "OK"
-            btnGo.Location = New Drw.Point(146, yBtn)
-            btnGo.Size = New Drw.Size(50, btnH)
+            btnGo.Location = New Drw.Point(x, yBtn)
+            btnGo.Size = New Drw.Size(26, BTN_H)
             ApplyToolbarButtonStyle(btnGo)
-            btnGo.BackColor = Drw.Color.FromArgb(45, 100, 180)     ' ⭐ Nổi bật màu xanh
+            btnGo.BackColor = Drw.Color.FromArgb(45, 100, 180)
             btnGo.ForeColor = Drw.Color.White
-            btnGo.Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            btnGo.Font = New Drw.Font("Segoe UI", 6.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             Me.Controls.Add(btnGo)
+            x += 26 + 3                                     ' = 143
 
+            '═════════════════════════════════════════════════════
+            ' NÚT >
+            '═════════════════════════════════════════════════════
             btnNext = New Button()
             btnNext.Text = ">"
-            btnNext.Location = New Drw.Point(200, yBtn)
-            btnNext.Size = New Drw.Size(38, btnH)
+            btnNext.Location = New Drw.Point(x, yBtn)
+            btnNext.Size = New Drw.Size(22, BTN_H)
             ApplyToolbarButtonStyle(btnNext)
             Me.Controls.Add(btnNext)
+            x += 22 + 3                                     ' = 168
 
+            '═════════════════════════════════════════════════════
+            ' NÚT >|
+            '═════════════════════════════════════════════════════
             btnLast = New Button()
             btnLast.Text = ">|"
-            btnLast.Location = New Drw.Point(242, yBtn)
-            btnLast.Size = New Drw.Size(38, btnH)
+            btnLast.Location = New Drw.Point(x, yBtn)
+            btnLast.Size = New Drw.Size(22, BTN_H)
             ApplyToolbarButtonStyle(btnLast)
             Me.Controls.Add(btnLast)
+            x += 22 + 9                                     ' = 199 (gap 9px)
+
+            '═════════════════════════════════════════════════════
+            ' NÚT ✕
+            '═════════════════════════════════════════════════════
+            btnClose = New Button()
+            btnClose.Text = "✕"
+            btnClose.Location = New Drw.Point(x, yBtn + 3)
+            btnClose.Size = New Drw.Size(16, 14)
+            ApplyToolbarButtonStyle(btnClose)
+            btnClose.ForeColor = Drw.Color.FromArgb(255, 180, 180)
+            btnClose.Font = New Drw.Font("Segoe UI", 5.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            Me.Controls.Add(btnClose)
+            '--- x = 199, + 16 = 215, padding phải = 220 - 215 = 5px ✓
 
             '═════════════════════════════════════════════════════
             ' EVENTS
@@ -268,18 +285,16 @@ Namespace ToolInventor2025.Drawing.Buttons
             AddHandler btnLast.Click, Sub() GoToLastSheet()
             AddHandler btnClose.Click, Sub() Me.Close()
 
-            '--- ⭐ Nút OK ---
             AddHandler btnGo.Click, AddressOf BtnGo_Click
 
             AddHandler txtPage.KeyDown, AddressOf TxtPage_KeyDown
             AddHandler txtPage.Enter, AddressOf TxtPage_Enter
 
             AddHandler Me.MouseWheel, AddressOf Form_MouseWheel
-            AddHandler lblInfo.MouseWheel, AddressOf Form_MouseWheel
         End Sub
 
         '=========================================================
-        ' TEXTBOX ENTER — chọn sẵn nội dung để gõ đè
+        ' TEXTBOX ENTER
         '=========================================================
         Private Sub TxtPage_Enter(ByVal sender As Object, ByVal e As EventArgs)
             Try
@@ -287,14 +302,16 @@ Namespace ToolInventor2025.Drawing.Buttons
             Catch
             End Try
         End Sub
+
         '=========================================================
-        ' NÚT OK — click để chuyển sheet
+        ' NÚT OK
         '=========================================================
         Private Sub BtnGo_Click(ByVal sender As Object, ByVal e As EventArgs)
             GoToSheetFromText()
         End Sub
+
         '=========================================================
-        ' ⭐ ĐẶT VỊ TRÍ FORM — DƯỚI MÀN HÌNH INVENTOR
+        ' ĐẶT VỊ TRÍ FORM
         '=========================================================
         Private Sub PositionOnInventorScreen()
             Try
@@ -318,7 +335,6 @@ Namespace ToolInventor2025.Drawing.Buttons
 
                 Dim wa As Drw.Rectangle = targetScreen.WorkingArea
 
-                '--- Giữa ngang, cách đáy 50px ---
                 Dim newX As Integer = wa.Left + (wa.Width - Me.Width) \ 2
                 Dim newY As Integer = wa.Bottom - Me.Height - 50
 
@@ -329,11 +345,7 @@ Namespace ToolInventor2025.Drawing.Buttons
         End Sub
 
         '=========================================================
-        ' ⭐ KIỂM TRA WINDOW CÓ PHẢI FORM KHÔNG (duyệt parent chain)
-        '
-        ' Textbox / button con khi click sẽ có foreground = handle
-        ' của chính nó, KHÔNG phải handle của form.
-        ' → Phải duyệt lên parent để check.
+        ' KIỂM TRA WINDOW
         '=========================================================
         Private Function IsWindowPartOfForm(ByVal hWnd As IntPtr) As Boolean
             If hWnd = IntPtr.Zero Then Return False
@@ -366,7 +378,7 @@ Namespace ToolInventor2025.Drawing.Buttons
             btn.FlatAppearance.BorderColor = Drw.Color.FromArgb(90, 90, 100)
             btn.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(80, 80, 95)
             btn.FlatAppearance.MouseDownBackColor = Drw.Color.FromArgb(45, 100, 180)
-            btn.Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            btn.Font = New Drw.Font("Segoe UI", 6.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             btn.TabStop = False
             btn.Cursor = Cursors.Hand
             btn.UseVisualStyleBackColor = False
@@ -408,8 +420,7 @@ Namespace ToolInventor2025.Drawing.Buttons
                 Dim oDoc As Inventor.DrawingDocument = GetCurrentDrawing()
 
                 If oDoc Is Nothing Then
-                    If force OrElse lblInfo.Text <> "Không phải Drawing" Then
-                        lblInfo.Text = "Không phải Drawing"
+                    If force Then
                         txtPage.Text = ""
                         SetButtonsEnabled(False)
                     End If
@@ -434,11 +445,14 @@ Namespace ToolInventor2025.Drawing.Buttons
                 lastSheetCount = total
                 lastDocPath = docPath
 
-                lblInfo.Text = "Sheet  " & currentIdx.ToString() & " / " & total.ToString()
-
                 If Not txtPage.Focused Then
                     txtPage.Text = currentIdx.ToString()
                 End If
+
+                Try
+                    Me.Text = "Sheet " & currentIdx.ToString() & " / " & total.ToString()
+                Catch
+                End Try
             Catch
             End Try
         End Sub
@@ -462,14 +476,7 @@ Namespace ToolInventor2025.Drawing.Buttons
         End Sub
 
         '=========================================================
-        ' ⭐ TIMER FOREGROUND — check foreground + parent chain
-        '
-        ' Nếu foreground = Inventor
-        '   HOẶC foreground là form / con của form
-        '   → form phải HIỆN
-        ' Ngược lại → ẩn form
-        '
-        ' ⭐ Bỏ qua khi đang transitioning (chuyển sheet)
+        ' TIMER FOREGROUND
         '=========================================================
         Private Sub ForegroundTimer_Tick(ByVal sender As Object, ByVal e As EventArgs)
             Try
@@ -484,7 +491,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                 Dim isInv As Boolean = (invHwnd <> IntPtr.Zero AndAlso fg = invHwnd)
                 Dim isMine As Boolean = IsWindowPartOfForm(fg)
 
-                '--- Show/hide ---
                 If isInv OrElse isMine Then
                     If Not Me.Visible Then
                         Me.Show()
@@ -498,7 +504,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                     Return
                 End If
 
-                '--- Check Inventor có đổi màn hình không ---
                 If invHwnd <> IntPtr.Zero Then
                     Dim invScreen As Screen = Nothing
                     Try : invScreen = Screen.FromHandle(invHwnd) : Catch : End Try
@@ -527,13 +532,9 @@ Namespace ToolInventor2025.Drawing.Buttons
 
                 transitioning = True
 
-                '--- Chuyển sheet ---
                 oDoc.Sheets.Item(index).Activate()
-
-                '--- Update UI ---
                 UpdateInfo(True)
 
-                '--- Trả focus về Inventor ---
                 Try
                     Dim invHwnd As IntPtr = New IntPtr(invApp.MainFrameHWND)
                     If invHwnd <> IntPtr.Zero Then
@@ -564,9 +565,6 @@ Namespace ToolInventor2025.Drawing.Buttons
         '=========================================================
         Private Sub TxtPage_KeyDown(ByVal sender As Object, ByVal e As KeyEventArgs)
             Try
-                '═════════════════════════════════════════════════════
-                ' ENTER — chuyển sheet
-                '═════════════════════════════════════════════════════
                 If e.KeyCode = Keys.Enter Then
                     e.SuppressKeyPress = True
                     e.Handled = True
@@ -574,9 +572,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                     Exit Sub
                 End If
 
-                '═════════════════════════════════════════════════════
-                ' ESC — reset giá trị
-                '═════════════════════════════════════════════════════
                 If e.KeyCode = Keys.Escape Then
                     e.SuppressKeyPress = True
                     e.Handled = True
@@ -584,9 +579,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                     Exit Sub
                 End If
 
-                '═════════════════════════════════════════════════════
-                ' UP — sheet trước
-                '═════════════════════════════════════════════════════
                 If e.KeyCode = Keys.Up Then
                     e.SuppressKeyPress = True
                     e.Handled = True
@@ -594,9 +586,6 @@ Namespace ToolInventor2025.Drawing.Buttons
                     Exit Sub
                 End If
 
-                '═════════════════════════════════════════════════════
-                ' DOWN — sheet sau
-                '═════════════════════════════════════════════════════
                 If e.KeyCode = Keys.Down Then
                     e.SuppressKeyPress = True
                     e.Handled = True
