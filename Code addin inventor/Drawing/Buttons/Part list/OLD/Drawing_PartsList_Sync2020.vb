@@ -167,15 +167,12 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 Try : oDstSheet.Activate() : Catch : End Try
                 Try : drawDoc.Update() : Catch : End Try
 
-                '── Key nguồn ──
                 Dim srcKeys As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
                 For Each info In srcColumns
                     srcKeys.Add(MakeKey(info.PropSet, info.PropName, info.Title))
                 Next
 
-                '════════════════════════════════════════
-                ' B1. XÓA cột đích không có trong nguồn
-                '════════════════════════════════════════
+                '── B1. XÓA cột thừa ──
                 log.AppendLine("── XÓA CỘT THỪA ──")
                 Dim removed As Integer = 0
                 For i As Integer = dstPL.PartsListColumns.Count To 1 Step -1
@@ -186,9 +183,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         Try : dName = dcol.PropertyName : Catch : End Try
                         Try : dTitle = dcol.Title : Catch : End Try
 
-                        Dim key As String = MakeKey(dSet, dName, dTitle)
-                        If srcKeys.Contains(key) Then Continue For
-
+                        If srcKeys.Contains(MakeKey(dSet, dName, dTitle)) Then Continue For
                         dcol.Remove()
                         removed += 1
                         log.AppendLine("  ✓ Xóa: '" & dTitle & "'")
@@ -196,17 +191,13 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         log.AppendLine("  ✗ Xóa lỗi: " & ex.Message)
                     End Try
                 Next
-
                 Try : drawDoc.Update() : Catch : End Try
 
-                '════════════════════════════════════════
-                ' B2. THÊM cột nguồn còn thiếu
-                '════════════════════════════════════════
+                '── B2. THÊM cột thiếu ──
                 log.AppendLine()
                 log.AppendLine("── THÊM CỘT ──")
                 Dim added As Integer = 0, skipped As Integer = 0, failed As Integer = 0
 
-                ' Key đích sau khi xóa
                 Dim dstKeys As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
                 For Each dcol As Inventor.PartsListColumn In dstPL.PartsListColumns
                     Dim dSet As String = "", dName As String = "", dTitle As String = ""
@@ -222,10 +213,8 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         skipped += 1
                         Continue For
                     End If
-
                     If info.PropTypeRaw Is Nothing Then
                         failed += 1
-                        log.AppendLine("  ⚠ PropType NULL: '" & info.Title & "'")
                         Continue For
                     End If
 
@@ -246,12 +235,9 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         log.AppendLine("  ✗ Thêm lỗi: '" & info.Title & "'")
                     End If
                 Next
-
                 Try : drawDoc.Update() : Catch : End Try
 
-                '════════════════════════════════════════
-                ' B3. CẬP NHẬT Title + Width cột đã khớp
-                '════════════════════════════════════════
+                '── B3. CẬP NHẬT Title/Width ──
                 log.AppendLine()
                 log.AppendLine("── CẬP NHẬT Title/Width ──")
                 Dim updated As Integer = 0
@@ -263,13 +249,12 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                             Try : dName = dcol.PropertyName : Catch : End Try
                             Try : dTitle = dcol.Title : Catch : End Try
 
-                            If MakeKey(dSet, dName, dTitle) <> MakeKey(info.PropSet, info.PropName, info.Title) AndAlso
-                       MakeKey(dSet, dName, dTitle) <> MakeKey(info.PropSet, info.PropName, dTitle) Then
-                                ' Khớp theo PropSet|PropName
-                                If (dSet & "|" & dName).ToUpper() <> (info.PropSet & "|" & info.PropName).ToUpper() Then
-                                    Continue For
-                                End If
-                            End If
+                            Dim match As Boolean =
+                        MakeKey(dSet, dName, dTitle) = MakeKey(info.PropSet, info.PropName, info.Title) OrElse
+                        ((info.PropSet & "|" & info.PropName).ToUpper() <> "|" AndAlso
+                         (dSet & "|" & dName).ToUpper() = (info.PropSet & "|" & info.PropName).ToUpper())
+
+                            If Not match Then Continue For
 
                             Dim changed As Boolean = False
                             If Not String.IsNullOrEmpty(info.Title) AndAlso dTitle <> info.Title Then
@@ -285,16 +270,59 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                     Next
                 Next
 
+                '── B4. SẮP XẾP THEO NGUỒN ──
+                log.AppendLine()
+                log.AppendLine("── SẮP XẾP CỘT ──")
+                Dim reordered As Integer = 0
+                For targetPos As Integer = 1 To srcColumns.Count
+                    Dim info = srcColumns(targetPos - 1)
+                    Dim currentPos As Integer = -1
+
+                    For i As Integer = 1 To dstPL.PartsListColumns.Count
+                        Try
+                            Dim dcol As Inventor.PartsListColumn = dstPL.PartsListColumns.Item(i)
+                            Dim dSet As String = "", dName As String = "", dTitle As String = ""
+                            Try : dSet = dcol.PropertySetName : Catch : End Try
+                            Try : dName = dcol.PropertyName : Catch : End Try
+                            Try : dTitle = dcol.Title : Catch : End Try
+
+                            Dim match As Boolean =
+                        MakeKey(dSet, dName, dTitle) = MakeKey(info.PropSet, info.PropName, info.Title) OrElse
+                        ((info.PropSet & "|" & info.PropName).ToUpper() <> "|" AndAlso
+                         (dSet & "|" & dName).ToUpper() = (info.PropSet & "|" & info.PropName).ToUpper()) OrElse
+                        (Not String.IsNullOrEmpty(info.Title) AndAlso
+                         dTitle.Equals(info.Title, StringComparison.OrdinalIgnoreCase))
+
+                            If match Then
+                                currentPos = i
+                                Exit For
+                            End If
+                        Catch
+                        End Try
+                    Next
+
+                    If currentPos < 1 OrElse currentPos = targetPos Then Continue For
+
+                    Try
+                        dstPL.PartsListColumns.Item(currentPos).Reposition(targetPos)
+                        reordered += 1
+                        log.AppendLine("  ✓ '" & info.Title & "': " & currentPos & " → " & targetPos)
+                    Catch ex As Exception
+                        log.AppendLine("  ✗ Reposition '" & info.Title & "': " & ex.Message)
+                    End Try
+                Next
+
                 Try : drawDoc.Update2(True) : Catch : End Try
 
                 log.AppendLine()
                 log.AppendLine("══ KẾT QUẢ ══")
-                log.AppendLine("  Xóa cột   : " & removed)
-                log.AppendLine("  Thêm cột  : " & added)
-                log.AppendLine("  Bỏ qua    : " & skipped)
-                log.AppendLine("  Cập nhật  : " & updated)
-                log.AppendLine("  Lỗi thêm  : " & failed)
-                log.AppendLine("  Cột sau   : " & dstPL.PartsListColumns.Count)
+                log.AppendLine("  Xóa     : " & removed)
+                log.AppendLine("  Thêm    : " & added)
+                log.AppendLine("  Bỏ qua  : " & skipped)
+                log.AppendLine("  Cập nhật: " & updated)
+                log.AppendLine("  Sắp xếp : " & reordered)
+                log.AppendLine("  Lỗi thêm: " & failed)
+                log.AppendLine("  Cột sau : " & dstPL.PartsListColumns.Count)
 
             Catch ex As Exception
                 log.AppendLine()
@@ -316,11 +344,12 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
         Private Function MakeKey(propSet As String, propName As String, title As String) As String
             Dim ps As String = If(propSet, "").Trim()
             Dim pn As String = If(propName, "").Trim()
-            If ps <> "" OrElse pn <> "" Then
-                Return (ps & "|" & pn).ToUpper()
-            End If
+            If ps <> "" OrElse pn <> "" Then Return (ps & "|" & pn).ToUpper()
             Return ("TITLE|" & If(title, "").Trim()).ToUpper()
         End Function
+
+
+
 
         '=========================================================
         ' THÊM 1 CỘT VÀO PARTSLIST — dùng late binding
