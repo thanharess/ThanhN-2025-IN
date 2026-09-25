@@ -3,100 +3,191 @@ Option Strict Off
 
 Imports System.Windows.Forms
 Imports Inventor
+Imports Drw = System.Drawing
 
 Namespace ToolInventor2025.Drawing.Buttons.Drawtext
 
     Public Module draw_text_list_1
 
         Public Sub OnExecute(ByVal Context As NameValueMap)
-            Select Case ShowSheetMetalMenu()
-                Case 1
-                    TextReplaceModule.OnExecute(Context)
-                Case 2
-                    Doichuhoa.OnExecute(Context)
-                Case 3
-                    ThayChuTrongTextModule.OnExecute(Context)
-                Case 4
-                    ThayChuTrongTextModuleold.OnExecute(Context)
-                    ' Case 5
-                    ' Draw_dim_hole_a.OnExecute(Context)
-                    '   Case 6
-                    ' Draw_dim_hole_b.OnExecute(Context)
-                    '  Case 7
-                    '  Draw_dim_hole_c.OnExecute(Context)
-                    '  Case 8
-                    '  Draw_dim_hole_d.OnExecute(Context)
-                    ' Case 9
-                    '  Draw_dim_hole_e.OnExecute(Context)
-                    ' Case 10
-                    ' Draw_dim_hole.OnExecute(Context)
-                    '  Case 11
-                    '      ' Draw_dim_base_line_c.OnExecute(Context)
-                    '  Case 12
-                    ' Draw_dim_chain_line_c.OnExecute(Context)
-                    '   Case 13
-                    '   Delete_small_dims.OnExecute(Context)
-                    '  Case 14
-                    '  Draw_dim_chain_line_d.OnExecute(Context)
+            Select Case ShowMainMenu()
+                Case 1 : TextReplaceModule.OnExecute(Context)
+                Case 2 : Doichuhoa.OnExecute(Context)
+                Case 3 : ThayChuTrongTextModule.OnExecute(Context)
             End Select
         End Sub
 
-        Private Function ShowSheetMetalMenu() As Integer
+
+        Private Function ShowMainMenu() As Integer
             Dim result As Integer = 0
 
-            Using form As New Form()
-                form.Text = "Auto Text"
-                form.Width = 530
-                form.Height = 600
-                form.StartPosition = FormStartPosition.CenterScreen
-                form.FormBorderStyle = FormBorderStyle.FixedDialog
-                form.MaximizeBox = False
-                form.MinimizeBox = False
+            Using frm As New Form()
+                frm.Text = "Auto Text — Drawing"
+                frm.AutoScaleMode = AutoScaleMode.None
+                frm.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
+                frm.ClientSize = New Drw.Size(680, 470)
+                frm.FormBorderStyle = FormBorderStyle.FixedSingle
+                frm.StartPosition = FormStartPosition.CenterScreen
+                frm.MaximizeBox = False
+                frm.MinimizeBox = False
+                frm.ShowInTaskbar = False
+                frm.BackColor = Drw.Color.FromArgb(245, 245, 245)
+                frm.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                frm.Tag = 0
 
-                Dim title As New Label() With {
-                    .Text = "Auto Text", .Left = 20, .Top = 15,
-                    .Width = 470, .Height = 28
-                }
-                form.Controls.Add(title)
+                '===== HEADER =====
+                Dim pnlHeader As New Panel()
+                pnlHeader.Location = New Drw.Point(0, 0)
+                pnlHeader.Size = New Drw.Size(680, 75)
+                pnlHeader.BackColor = Drw.Color.FromArgb(45, 100, 180)
+                frm.Controls.Add(pnlHeader)
 
-                form.Tag = 0
-                AddMenuButton(form, "Text Replace", 50, 1)
-                AddMenuButton(form, "Thay chữ in hoa hoặc chữ thường", 85, 2)
-                AddMenuButton(form, "Thay thế chữ trong text", 120, 3)
-                AddMenuButton(form, "Thay thế chữ trong text old", 155, 4)
-                '  AddMenuButton(form, "Dim kích thước lỗ", 190, 5)
-                '   AddMenuButton(form, "Dim lỗ Dim về cạnh (Dim ít có bỏ qua lỗ nếu trùng, bỏ qua lỗ array)", 225, 6)
-                '    AddMenuButton(form, "Dim lỗ Dim về cạnh (Dim tương đối có bỏ qua lỗ nếu trùng, bỏ qua lỗ array)", 260, 7)
-                'AddMenuButton(form, "Dim lỗ Dim về cạnh (Nhiều dim ko bỏ qua lỗ, dim tất cả các lỗ)", 295, 8)
-                'AddMenuButton(form, "Dim lỗ Base Dimline Set về cạnh", 330, 9)
-                'AddMenuButton(form, "Dim lỗ Base Dimline về cạnh", 365, 10)
-                'AddMenuButton(form, "Base Dim view Auto + Hole + KC tối thiểu)", 400, 11)
-                'AddMenuButton(form, "Chain Dim view Auto + Hole + KC tối thiểu)", 435, 12)
-                'AddMenuButton(form, "xóa dim", 470, 13)
-                '    AddMenuButton(form, "Dim lỗ Base Dimline về cạnh", 505, 14)
+                Dim lblTitle As New Label()
+                lblTitle.Text = "AUTO TEXT — DRAWING"
+                lblTitle.Font = New Drw.Font("Segoe UI", 15.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+                lblTitle.ForeColor = Drw.Color.White
+                lblTitle.Dock = DockStyle.Fill
+                lblTitle.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblTitle)
 
-                Dim cancelButton As New Button() With {
-                    .Text = "Hủy", .Left = 20, .Top = 510, .Width = 470, .Height = 30
-                }
-                AddHandler cancelButton.Click, Sub() form.Close()
-                form.Controls.Add(cancelButton)
+                Dim lblSub As New Label()
+                lblSub.Text = "Thay thế / xử lý chữ trong Drawing Note"
+                lblSub.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                lblSub.ForeColor = Drw.Color.FromArgb(220, 230, 245)
+                lblSub.Dock = DockStyle.Bottom
+                lblSub.Height = 20
+                lblSub.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblSub)
 
-                form.ShowDialog()
-                result = CInt(form.Tag)
+                '===== NHÓM 1: TEXT REPLACE =====
+                Dim gb1 As New GroupBox() With {
+                    .Text = "Text Replace",
+                    .Location = New Drw.Point(15, 90),
+                    .Size = New Drw.Size(650, 115),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb1)
+
+                AddCard(gb1, frm, 1,
+                        "1. Text Replace",
+                        "Thay thế chuỗi ký tự trong Drawing Note",
+                        20, 15, 300)
+
+                AddCard(gb1, frm, 2,
+                        "2. Đổi chữ IN HOA / thường",
+                        "5 kiểu: HOA, thường, Hoa đầu dòng/từ/câu",
+                        20, 335, 300)
+
+                '===== NHÓM 2: THAY CHỮ TRONG TEXT =====
+                Dim gb2 As New GroupBox() With {
+                    .Text = "Thay chữ trong Text (nâng cao)",
+                    .Location = New Drw.Point(15, 215),
+                    .Size = New Drw.Size(650, 115),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb2)
+
+                AddCard(gb2, frm, 3,
+                        "3. Thay chữ trong Text",
+                        "Tìm & thay nhiều cặp — Note, Dimension, Weld Symbol...",
+                        20, 15, 620)
+
+                '===== NÚT HỦY =====
+                Dim btnCancel As New Button()
+                btnCancel.Text = "HỦY"
+                btnCancel.Size = New Drw.Size(130, 44)
+                btnCancel.Location = New Drw.Point(535, 410)
+                btnCancel.FlatStyle = FlatStyle.Flat
+                btnCancel.FlatAppearance.BorderSize = 1
+                btnCancel.FlatAppearance.BorderColor = Drw.Color.FromArgb(200, 200, 200)
+                btnCancel.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(235, 235, 235)
+                btnCancel.FlatAppearance.MouseDownBackColor = Drw.Color.FromArgb(215, 215, 215)
+                btnCancel.BackColor = Drw.Color.FromArgb(250, 250, 250)
+                btnCancel.ForeColor = Drw.Color.FromArgb(60, 60, 60)
+                btnCancel.Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                btnCancel.Cursor = Cursors.Hand
+                btnCancel.UseVisualStyleBackColor = False
+                AddHandler btnCancel.Click, Sub()
+                                                frm.Tag = 0
+                                                frm.Close()
+                                            End Sub
+                frm.Controls.Add(btnCancel)
+                frm.CancelButton = btnCancel
+
+                frm.ShowDialog()
+                result = CInt(frm.Tag)
             End Using
 
             Return result
         End Function
 
-        Private Sub AddMenuButton(ByVal form As Form, ByVal text As String, ByVal top As Integer, ByVal value As Integer)
-            Dim button As New Button() With {
-                .text = text, .Left = 20, .top = top, .Width = 470, .Height = 30
-            }
-            AddHandler button.Click, Sub()
-                                         form.Tag = value
-                                         form.Close()
-                                     End Sub
-            form.Controls.Add(button)
+
+        '=========================================================
+        ' THÊM CARD
+        '=========================================================
+        Private Sub AddCard(ByVal parent As GroupBox,
+                            ByVal frm As Form,
+                            ByVal value As Integer,
+                            ByVal title As String,
+                            ByVal desc As String,
+                            ByVal top As Integer,
+                            ByVal left As Integer,
+                            ByVal width As Integer)
+
+            Dim cardHeight As Integer = 70
+
+            Dim pnl As New Panel()
+            pnl.Location = New Drw.Point(left, top)
+            pnl.Size = New Drw.Size(width, cardHeight)
+            pnl.BackColor = Drw.Color.FromArgb(250, 250, 250)
+            pnl.BorderStyle = BorderStyle.FixedSingle
+            pnl.Cursor = Cursors.Hand
+            parent.Controls.Add(pnl)
+
+            '--- Tiêu đề ---
+            Dim lblTitle As New Label()
+            lblTitle.Text = title
+            lblTitle.Font = New Drw.Font("Segoe UI", 10.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            lblTitle.ForeColor = Drw.Color.FromArgb(30, 30, 30)
+            lblTitle.Location = New Drw.Point(15, 8)
+            lblTitle.Size = New Drw.Size(width - 25, 22)
+            pnl.Controls.Add(lblTitle)
+
+            '--- Mô tả ---
+            Dim lblDesc As New Label()
+            lblDesc.Text = desc
+            lblDesc.Font = New Drw.Font("Segoe UI", 8.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            lblDesc.ForeColor = Drw.Color.FromArgb(110, 110, 110)
+            lblDesc.Location = New Drw.Point(15, 34)
+            lblDesc.Size = New Drw.Size(width - 25, 22)
+            pnl.Controls.Add(lblDesc)
+
+            '--- Hover ---
+            Dim hoverOn As EventHandler = Sub()
+                                              pnl.BackColor = Drw.Color.FromArgb(235, 242, 252)
+                                          End Sub
+            Dim hoverOff As EventHandler = Sub()
+                                               pnl.BackColor = Drw.Color.FromArgb(250, 250, 250)
+                                           End Sub
+
+            AddHandler pnl.MouseEnter, hoverOn
+            AddHandler pnl.MouseLeave, hoverOff
+            AddHandler lblTitle.MouseEnter, hoverOn
+            AddHandler lblTitle.MouseLeave, hoverOff
+            AddHandler lblDesc.MouseEnter, hoverOn
+            AddHandler lblDesc.MouseLeave, hoverOff
+
+            '--- Click ---
+            Dim clickH As EventHandler = Sub(sender, e)
+                                             frm.Tag = value
+                                             frm.DialogResult = DialogResult.OK
+                                             frm.Close()
+                                         End Sub
+            AddHandler pnl.Click, clickH
+            AddHandler lblTitle.Click, clickH
+            AddHandler lblDesc.Click, clickH
         End Sub
 
     End Module

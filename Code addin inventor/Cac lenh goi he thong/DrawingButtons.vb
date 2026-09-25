@@ -240,9 +240,9 @@ Namespace ToolInventor2025
 
             Dim DrawingBtn21 As ButtonDefinition = controlDefs.AddButtonDefinition("Đông bọ partlist", "ToolInventor2025_Drawing_Btn21", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
                                                                                    "Thay thế văn bản", Dra1SmallIcon21, Dra1LargeIcon21)
-            'AddHandler DrawingBtn21.OnExecute, AddressOf Drawing.Buttons.DrawSheet.Drawing_PartsList_Sync2020.OnExecute
+            AddHandler DrawingBtn21.OnExecute, AddressOf Drawing.Buttons.DrawSheet.Drawing_PartsList_Sync2020.OnExecute
 
-            '  buttonsList.Add(DrawingBtn21)
+            buttonsList.Add(DrawingBtn21)
 
             ''''''''' tool ngoài
 

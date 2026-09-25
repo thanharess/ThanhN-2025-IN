@@ -208,6 +208,18 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawtext
                     Return CType(obj, ModelLeaderNote).Definition.Text.Text
                 End If
 
+                If TypeOf obj Is DrawingWeldingSymbol Then
+                    Try
+                        Dim ws As DrawingWeldingSymbol = CType(obj, DrawingWeldingSymbol)
+                        If ws.Retrieved Then Return Nothing
+                        If ws.Definitions IsNot Nothing AndAlso ws.Definitions.Count > 0 Then
+                            Return ws.Definitions.Item(1).TailNote
+                        End If
+                    Catch
+                    End Try
+                    Return Nothing
+                End If
+
                 If TypeOf obj Is SketchedSymbol Then
                     Dim oSymbol As SketchedSymbol = CType(obj, SketchedSymbol)
                     Dim oSketch As DrawingSketch = oSymbol.Definition.Sketch
@@ -264,6 +276,26 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawtext
                 If TypeOf obj Is ModelLeaderNote Then
                     CType(obj, ModelLeaderNote).Definition.Text.FormattedText = newText
                     Return True
+                End If
+
+                If TypeOf obj Is DrawingWeldingSymbol Then
+                    Try
+                        Dim ws As DrawingWeldingSymbol = CType(obj, DrawingWeldingSymbol)
+                        If ws.Retrieved Then Return False
+                        If ws.Definitions Is Nothing OrElse ws.Definitions.Count < 1 Then Return False
+
+                        Dim ok As Boolean = False
+                        For i As Integer = 1 To ws.Definitions.Count
+                            Try
+                                ws.Definitions.Item(i).TailNote = newText
+                                ok = True
+                            Catch
+                            End Try
+                        Next
+                        Return ok
+                    Catch
+                    End Try
+                    Return False
                 End If
 
                 If TypeOf obj Is SketchedSymbol Then

@@ -1,4 +1,3 @@
-
 Option Explicit On
 Option Strict Off
 
@@ -6,10 +5,25 @@ Imports System.Collections.Generic
 Imports System.Globalization
 Imports System.Windows.Forms
 Imports Inventor
+Imports Drw = System.Drawing
 Imports ToolInventor2025.ToolInventor2025.Assembly.Buttons
 
 Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
+
     Public Module Draw_Partlist_1b
+
+        '=========================================================
+        ' OPTIONS CLASS
+        '=========================================================
+        Private Class PartlistOptionsEng
+            Public NameMode As Integer = 1
+            Public Material As String = "SS400"
+            Public ClearPurchasedMaterial As Boolean = True
+            Public Scope As Integer = 1     ' 1=first, 2=all on sheet, 3=all drawing
+            Public Cancelled As Boolean = True
+        End Class
+
+
         Public Sub OnExecute(ByVal Context As NameValueMap)
 
             Dim app As Inventor.Application = g_inventorApplication
@@ -20,8 +34,8 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                 If app.ActiveDocument Is Nothing OrElse
                    app.ActiveDocument.DocumentType <> Inventor.DocumentTypeEnum.kDrawingDocumentObject Then
 
-                    MessageBox.Show(
-                        "Vui lòng mở file Drawing (.idw)!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show("Vui lòng mở file Drawing (.idw)!", "Lỗi",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error)
                     Exit Sub
                 End If
 
@@ -29,71 +43,24 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                 Dim oSheet As Inventor.Sheet = oDrawDoc.ActiveSheet
 
                 If oSheet.PartsLists.Count < 1 Then
-                    MessageBox.Show(
-                        "Sheet hiện tại không có Parts List.",
-                        "Thông báo",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information)
-                    Exit Sub
-                End If
-                '=================================================
-                ' 1. CHẾ ĐỘ TÊN
-                '=================================================
-                Dim nameModeIdx As Integer = PickFromList("Xử lý cột Tên Theo ENG", New String() {
-    "1 - Part Number: không ghi đè nếu Tên đã là PN/SN",
-    "2 - Part Number: chỉ ghi khi ô Tên đang trống",
-    "3 - Stock Number: đồng bộ trực tiếp vào BOM",
-    "4 - Không sửa tên (dùng Part Number để đoán đơn vị)",
-    "5 - Stock Number: không ghi đè nếu Tên đã là PN/SN",
-    "6 - Stock Number: chỉ ghi khi ô Tên đang trống",
-    "7 - Không sửa tên (dùng Stock Number để đoán đơn vị)"}, 0)
-
-                If nameModeIdx < 0 Then
-                    Exit Sub
-                End If
-
-                Dim nameMode As Integer = nameModeIdx + 1
-
-                '=================================================
-                ' 2. VẬT LIỆU
-                '=================================================
-                Dim matDefault As String =
-                    InputBox("Vật liệu mặc định (Part tự chế):", "Material", "SS400")
-
-                If matDefault Is Nothing Then
-                    matDefault = ""
-                End If
-                matDefault = matDefault.Trim()
-
-                '=================================================
-                ' 2b. XỬ LÝ VẬT LIỆU PURCHASED (Yes/No)
-                '=================================================
-                Dim result As DialogResult = MessageBox.Show(
-                   "Xóa vật liệu của vật tư mua (Purchased)?" & vbCrLf &
-                      "Yes = Xóa" & vbCrLf &
-                          "No  = Để nguyên",
-                    "Vật liệu Purchased",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question)
-
-                Dim clearPurchasedMaterial As Boolean = (result = DialogResult.Yes)
-                '=================================================
-                ' 3. PHẠM VI
-                '=================================================
-                Dim scopeIdx As Integer =
-                    PickFromList(
-                        "Phạm vi",
-                        New String() {
-                            "1 - Chỉ Parts List đầu trên sheet active",
-                            "2 - Tất cả Parts List trên sheet active",
-                            "3 - Tất cả Parts List của toàn bộ Drawing"}, 0)
-
-                If scopeIdx < 0 Then
+                    MessageBox.Show("Sheet hiện tại không có Parts List.", "Thông báo",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information)
                     Exit Sub
                 End If
 
                 '=================================================
-                ' TÊN CỘT
+                ' FORM TÙY CHỌN
+                '=================================================
+                Dim opt As PartlistOptionsEng = ShowOptionsForm()
+                If opt Is Nothing OrElse opt.Cancelled Then Exit Sub
+
+                Dim nameMode As Integer = opt.NameMode
+                Dim matDefault As String = opt.Material
+                Dim clearPurchasedMaterial As Boolean = opt.ClearPurchasedMaterial
+                Dim scopeIdx As Integer = opt.Scope - 1   ' 0-based
+
+                '=================================================
+                ' TÊN CỘT (ENG)
                 '=================================================
                 Dim colSTT As String = "No"
                 Dim colTen As String = "Name"
@@ -104,161 +71,334 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
 
                 Dim processed As Integer = 0
 
-
                 '=================================================
                 ' XỬ LÝ PHẠM VI
                 '=================================================
-
-                '-------------------------------------------------
-                ' 1 - PARTS LIST ĐẦU TIÊN SHEET ACTIVE
-                '-------------------------------------------------
                 If scopeIdx = 0 Then
-
+                    ' 1 - PARTS LIST ĐẦU TIÊN SHEET ACTIVE
                     Try
-
                         Dim oPartList As Inventor.PartsList = oSheet.PartsLists.Item(1)
 
-
-                        'MODE 3:
-                        'Stock Number -> BOM
-                        If nameMode = 3 Then
-                            SyncStockNumberToBOM(oPartList)
-
-                        End If
-
+                        If nameMode = 3 Then SyncStockNumberToBOM(oPartList)
 
                         ProcessOnePartsList(oPartList, nameMode, matDefault, clearPurchasedMaterial,
-                    colSTT, colTen, colTen2, colDonVi, colVL, colUnitQty)
-
+                                            colSTT, colTen, colTen2, colDonVi, colVL, colUnitQty)
                         processed += 1
-
-
                     Catch ex As Exception
-
-                        MessageBox.Show("Parts List 1:" & vbCrLf & ex.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-
+                        MessageBox.Show("Parts List 1:" & vbCrLf & ex.Message, "Cảnh báo",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     End Try
 
-                    '-------------------------------------------------
-                    ' 2 - TẤT CẢ PARTS LIST SHEET ACTIVE
-                    '-------------------------------------------------
                 ElseIf scopeIdx = 1 Then
-
+                    ' 2 - TẤT CẢ PARTS LIST SHEET ACTIVE
                     For plIdx As Integer = 1 To oSheet.PartsLists.Count
-
                         Try
-
                             Dim oPartList As Inventor.PartsList = oSheet.PartsLists.Item(plIdx)
 
-                            'MODE 3
-                            If nameMode = 3 Then
+                            If nameMode = 3 Then SyncStockNumberToBOM(oPartList)
 
-                                SyncStockNumberToBOM(oPartList)
-
-                            End If
-
-
-                            ProcessOnePartsList(oPartList, nameMode, matDefault, clearPurchasedMaterial, colSTT, colTen, colTen2, colDonVi, colVL, colUnitQty)
-
-
+                            ProcessOnePartsList(oPartList, nameMode, matDefault, clearPurchasedMaterial,
+                                                colSTT, colTen, colTen2, colDonVi, colVL, colUnitQty)
                             processed += 1
-
-
                         Catch exPL As Exception
-
-                            MessageBox.Show("Sheet: " & oSheet.Name & vbCrLf & "Parts List: " & plIdx.ToString() &
-                                vbCrLf & exPL.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-
+                            MessageBox.Show("Sheet: " & oSheet.Name & vbCrLf &
+                                            "Parts List: " & plIdx.ToString() & vbCrLf &
+                                            exPL.Message, "Cảnh báo",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         End Try
-
                     Next
 
-                    '-------------------------------------------------
-                    ' 3 - TẤT CẢ PARTS LIST TOÀN BỘ DRAWING
-                    '-------------------------------------------------
                 ElseIf scopeIdx = 2 Then
-
+                    ' 3 - TẤT CẢ PARTS LIST TOÀN BỘ DRAWING
                     For sheetIdx As Integer = 1 To oDrawDoc.Sheets.Count
-
                         Try
-
                             Dim oCurSheet As Inventor.Sheet = oDrawDoc.Sheets.Item(sheetIdx)
 
-
                             For plIdx As Integer = 1 To oCurSheet.PartsLists.Count
-
                                 Try
-
                                     Dim oPartList As Inventor.PartsList = oCurSheet.PartsLists.Item(plIdx)
 
+                                    If nameMode = 3 Then SyncStockNumberToBOM(oPartList)
 
-                                    'MODE 3
-                                    If nameMode = 3 Then
-
-                                        SyncStockNumberToBOM(oPartList)
-
-                                    End If
-
-
-                                    ProcessOnePartsList(oPartList, nameMode, matDefault, clearPurchasedMaterial, colSTT, colTen, colTen2, colDonVi, colVL, colUnitQty)
-
-
+                                    ProcessOnePartsList(oPartList, nameMode, matDefault, clearPurchasedMaterial,
+                                                        colSTT, colTen, colTen2, colDonVi, colVL, colUnitQty)
                                     processed += 1
-
-
                                 Catch exPL As Exception
-                                    MessageBox.Show("Sheet: " & oCurSheet.Name & vbCrLf & "Parts List: " &
-                                        plIdx.ToString() & vbCrLf & exPL.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-
+                                    MessageBox.Show("Sheet: " & oCurSheet.Name & vbCrLf &
+                                                    "Parts List: " & plIdx.ToString() & vbCrLf &
+                                                    exPL.Message, "Cảnh báo",
+                                                    MessageBoxButtons.OK, MessageBoxIcon.Warning)
                                 End Try
-
                             Next
-
-
                         Catch exSheet As Exception
-
-                            MessageBox.Show("Lỗi Sheet " & sheetIdx.ToString() & ":" & vbCrLf & exSheet.Message, "Cảnh báo",
-                                MessageBoxButtons.OK, MessageBoxIcon.Warning)
-
+                            MessageBox.Show("Lỗi Sheet " & sheetIdx.ToString() & ":" & vbCrLf &
+                                            exSheet.Message, "Cảnh báo",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         End Try
-
                     Next
-
                 End If
-
 
                 '=================================================
                 ' UPDATE DRAWING CUỐI CÙNG
                 '=================================================
-                Try
-                    oDrawDoc.Update()
-                Catch
-                End Try
-
+                Try : oDrawDoc.Update() : Catch : End Try
 
                 '=================================================
                 ' THÔNG BÁO
                 '=================================================
                 MessageBox.Show("Hoàn tất!" & vbCrLf &
-    "Parts List đã xử lý: " & processed.ToString() &
-    vbCrLf & "Chế độ tên: " & nameMode.ToString() &
-    vbCrLf & "Nguồn tên: " & If(nameMode = 3, "Stock Number / đồng bộ từ Part Number",
-             If(nameMode = 4 OrElse nameMode = 7, "Không sửa",
-             If(nameMode = 5 OrElse nameMode = 6, "Stock Number", "Part Number"))) &
-    vbCrLf & "VL mặc định: " & If(matDefault = "", "(không dùng)", matDefault) &
-    vbCrLf & "VL Purchased: " & If(clearPurchasedMaterial, "Xóa", "Để nguyên"),
-    "Override Parts List",
-    MessageBoxButtons.OK,
-    MessageBoxIcon.Information)
-
+                    "Parts List đã xử lý: " & processed.ToString() & vbCrLf &
+                    "Chế độ tên: " & nameMode.ToString() & vbCrLf &
+                    "Nguồn tên: " & If(nameMode = 3, "Stock Number / đồng bộ từ Part Number",
+                             If(nameMode = 4 OrElse nameMode = 7, "Không sửa",
+                             If(nameMode = 5 OrElse nameMode = 6, "Stock Number", "Part Number"))) & vbCrLf &
+                    "VL mặc định: " & If(matDefault = "", "(không dùng)", matDefault) & vbCrLf &
+                    "VL Purchased: " & If(clearPurchasedMaterial, "Xóa", "Để nguyên"),
+                    "Override Parts List (ENG)",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information)
 
             Catch ex As Exception
-
-                MessageBox.Show("Lỗi:" & vbCrLf & ex.Message, "Override Parts List", MessageBoxButtons.OK, MessageBoxIcon.Error)
-
+                MessageBox.Show("Lỗi:" & vbCrLf & ex.Message, "Override Parts List",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
 
         End Sub
+
+
+        '=========================================================
+        ' FORM TÙY CHỌN — GỘP TẤT CẢ (BẢN ENG)
+        '=========================================================
+        Private Function ShowOptionsForm() As PartlistOptionsEng
+            Dim opt As New PartlistOptionsEng()
+            Dim _okConfirmed As Boolean = False
+
+            Using frm As New Form()
+                frm.Text = "Ghi Partlist ENG — Tùy chọn"
+                frm.AutoScaleMode = AutoScaleMode.None
+                frm.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
+                frm.ClientSize = New Drw.Size(740, 780)
+                frm.FormBorderStyle = FormBorderStyle.FixedSingle
+                frm.StartPosition = FormStartPosition.CenterScreen
+                frm.MaximizeBox = False
+                frm.MinimizeBox = False
+                frm.ShowInTaskbar = False
+                frm.BackColor = Drw.Color.FromArgb(245, 245, 245)
+                frm.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+
+                '===== HEADER =====
+                Dim pnlHeader As New Panel()
+                pnlHeader.Location = New Drw.Point(0, 0)
+                pnlHeader.Size = New Drw.Size(740, 75)
+                pnlHeader.BackColor = Drw.Color.FromArgb(45, 100, 180)
+                frm.Controls.Add(pnlHeader)
+
+                Dim lblTitle As New Label()
+                lblTitle.Text = "GHI PARTLIST ENG"
+                lblTitle.Font = New Drw.Font("Segoe UI", 15.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+                lblTitle.ForeColor = Drw.Color.White
+                lblTitle.Dock = DockStyle.Fill
+                lblTitle.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblTitle)
+
+                Dim lblSub As New Label()
+                lblSub.Text = "Ghi vật liệu / đơn vị / tên (tiếng Anh) cho Parts List trong Drawing"
+                lblSub.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                lblSub.ForeColor = Drw.Color.FromArgb(220, 230, 245)
+                lblSub.Dock = DockStyle.Bottom
+                lblSub.Height = 20
+                lblSub.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblSub)
+
+                '===== GROUP 1: CHẾ ĐỘ TÊN =====
+                Dim gb1 As New GroupBox() With {
+                    .Text = "1. Chế độ xử lý cột Tên (Name)",
+                    .Location = New Drw.Point(15, 90),
+                    .Size = New Drw.Size(710, 285),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb1)
+
+                Dim rdoModes(6) As RadioButton
+                Dim modeTexts As String() = {
+                    "Part Number — không ghi đè nếu Name đã là PN/SN",
+                    "Part Number — chỉ ghi khi ô Name đang trống",
+                    "Stock Number — đồng bộ trực tiếp vào BOM",
+                    "Không sửa tên (dùng Part Number để đoán đơn vị)",
+                    "Stock Number — không ghi đè nếu Name đã là PN/SN",
+                    "Stock Number — chỉ ghi khi ô Name đang trống",
+                    "Không sửa tên (dùng Stock Number để đoán đơn vị)"
+                }
+
+                For i As Integer = 0 To 6
+                    Dim rdo As New RadioButton() With {
+                        .Text = modeTexts(i),
+                        .Location = New Drw.Point(25, 30 + i * 32),
+                        .Size = New Drw.Size(670, 25),
+                        .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point),
+                        .Checked = (i = 0)}
+                    gb1.Controls.Add(rdo)
+                    rdoModes(i) = rdo
+                Next
+
+                '===== GROUP 2: VẬT LIỆU =====
+                Dim gb2 As New GroupBox() With {
+                    .Text = "2. Vật liệu (Material)",
+                    .Location = New Drw.Point(15, 385),
+                    .Size = New Drw.Size(710, 150),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb2)
+
+                Dim lblMat As New Label() With {
+                    .Text = "Vật liệu mặc định (Part tự chế):",
+                    .Location = New Drw.Point(25, 35),
+                    .Size = New Drw.Size(230, 25),
+                    .TextAlign = Drw.ContentAlignment.MiddleLeft,
+                    .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(lblMat)
+
+                Dim txtMat As New System.Windows.Forms.TextBox() With {
+                    .Text = "SS400",
+                    .Location = New Drw.Point(265, 35),
+                    .Size = New Drw.Size(400, 25),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(txtMat)
+
+                Dim lblHint As New Label() With {
+                    .Text = "Để trống = không ghi vật liệu mặc định",
+                    .Location = New Drw.Point(265, 62),
+                    .Size = New Drw.Size(400, 20),
+                    .ForeColor = Drw.Color.FromArgb(140, 140, 140),
+                    .Font = New Drw.Font("Segoe UI", 8.5F, Drw.FontStyle.Italic, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(lblHint)
+
+                Dim chkClearPurchased As New CheckBox() With {
+                    .Text = "Xóa vật liệu của vật tư mua (Purchased)",
+                    .Location = New Drw.Point(25, 100),
+                    .Size = New Drw.Size(640, 25),
+                    .Checked = True,
+                    .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(chkClearPurchased)
+
+                '===== GROUP 3: PHẠM VI =====
+                Dim gb3 As New GroupBox() With {
+                    .Text = "3. Phạm vi áp dụng",
+                    .Location = New Drw.Point(15, 545),
+                    .Size = New Drw.Size(710, 130),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb3)
+
+                Dim rdoScope(2) As RadioButton
+                Dim scopeTexts As String() = {
+                    "Chỉ Parts List đầu tiên trên Sheet đang mở",
+                    "Tất cả Parts List trên Sheet đang mở",
+                    "Tất cả Parts List của toàn bộ Drawing"
+                }
+
+                For i As Integer = 0 To 2
+                    Dim rdo As New RadioButton() With {
+                        .Text = scopeTexts(i),
+                        .Location = New Drw.Point(25, 30 + i * 30),
+                        .Size = New Drw.Size(670, 25),
+                        .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point),
+                        .Checked = (i = 0)}
+                    gb3.Controls.Add(rdo)
+                    rdoScope(i) = rdo
+                Next
+
+                '===== NÚT THỰC HIỆN =====
+                Dim btnOK As New Button()
+                btnOK.Text = "THỰC HIỆN"
+                btnOK.Size = New Drw.Size(170, 46)
+                btnOK.Location = New Drw.Point(555, 688)
+                btnOK.FlatStyle = FlatStyle.Flat
+                btnOK.FlatAppearance.BorderSize = 0
+                btnOK.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(60, 115, 195)
+                btnOK.FlatAppearance.MouseDownBackColor = Drw.Color.FromArgb(30, 80, 155)
+                btnOK.BackColor = Drw.Color.FromArgb(45, 100, 180)
+                btnOK.ForeColor = Drw.Color.White
+                btnOK.Font = New Drw.Font("Segoe UI", 10.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+                btnOK.Cursor = Cursors.Hand
+                btnOK.UseVisualStyleBackColor = False
+
+                AddHandler btnOK.Click, Sub()
+                                            ' Lấy chế độ tên
+                                            For i As Integer = 0 To 6
+                                                If rdoModes(i).Checked Then
+                                                    opt.NameMode = i + 1
+                                                    Exit For
+                                                End If
+                                            Next
+
+                                            ' Vật liệu
+                                            opt.Material = txtMat.Text.Trim()
+                                            opt.ClearPurchasedMaterial = chkClearPurchased.Checked
+
+                                            ' Phạm vi
+                                            For i As Integer = 0 To 2
+                                                If rdoScope(i).Checked Then
+                                                    opt.Scope = i + 1
+                                                    Exit For
+                                                End If
+                                            Next
+
+                                            opt.Cancelled = False
+                                            _okConfirmed = True
+                                            frm.DialogResult = DialogResult.OK
+                                            frm.Close()
+                                        End Sub
+                frm.Controls.Add(btnOK)
+
+                '===== NÚT HỦY =====
+                Dim btnCancel As New Button()
+                btnCancel.Text = "HỦY"
+                btnCancel.Size = New Drw.Size(130, 46)
+                btnCancel.Location = New Drw.Point(415, 688)
+                btnCancel.FlatStyle = FlatStyle.Flat
+                btnCancel.FlatAppearance.BorderSize = 1
+                btnCancel.FlatAppearance.BorderColor = Drw.Color.FromArgb(200, 200, 200)
+                btnCancel.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(235, 235, 235)
+                btnCancel.FlatAppearance.MouseDownBackColor = Drw.Color.FromArgb(215, 215, 215)
+                btnCancel.BackColor = Drw.Color.FromArgb(250, 250, 250)
+                btnCancel.ForeColor = Drw.Color.FromArgb(60, 60, 60)
+                btnCancel.Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                btnCancel.Cursor = Cursors.Hand
+                btnCancel.UseVisualStyleBackColor = False
+
+                AddHandler btnCancel.Click, Sub()
+                                                opt.Cancelled = True
+                                                frm.DialogResult = DialogResult.Cancel
+                                                frm.Close()
+                                            End Sub
+                frm.Controls.Add(btnCancel)
+
+                frm.AcceptButton = btnOK
+                frm.CancelButton = btnCancel
+
+                AddHandler frm.FormClosing, Sub(sender, e)
+                                                If Not _okConfirmed Then opt.Cancelled = True
+                                            End Sub
+
+                frm.ShowDialog()
+            End Using
+
+            Return opt
+        End Function
+
+
+        '=========================================================
+        ' CÁC HÀM BÊN DƯỚI GIỮ NGUYÊN 100%
+        '=========================================================
+        ' ProcessOnePartsList, ApplyNameLogic, SyncStockNumberToBOM,
+        ' GetNameColumn, GuessUnit, FindColumn, GetCellValue, SetCell,
+        ' ClearCell, TryParseNumber, GetProp, SetProp, NumberRows,
+        ' FindUnitQtyColumn
+
+        ' [Dán lại các hàm này từ code cũ của bạn vào đây]
 
 
         '=========================================================

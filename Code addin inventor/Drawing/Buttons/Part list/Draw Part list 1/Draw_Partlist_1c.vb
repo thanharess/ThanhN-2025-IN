@@ -4,6 +4,7 @@ Option Strict Off
 Imports System.Collections.Generic
 Imports System.Windows.Forms
 Imports Inventor
+Imports Drw = System.Drawing
 Imports ToolInventor2025.ToolInventor2025.Assembly.Buttons
 
 Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
@@ -15,6 +16,18 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
         ' PropId của Category = 2
         Private Const CATEGORY_PROPID As Long = 2
 
+
+        '=========================================================
+        ' OPTIONS CLASS
+        '=========================================================
+        Private Class CategoryOptions
+            Public Prefix As String = ""
+            Public WriteToBOM As Boolean = False
+            Public Scope As Integer = 1     ' 1=first, 2=all on sheet, 3=all drawing
+            Public Cancelled As Boolean = True
+        End Class
+
+
         Public Sub OnExecute(ByVal Context As NameValueMap)
 
             Dim app As Inventor.Application = g_inventorApplication
@@ -23,7 +36,8 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                 If app.ActiveDocument Is Nothing OrElse
                    app.ActiveDocument.DocumentType <> Inventor.DocumentTypeEnum.kDrawingDocumentObject Then
 
-                    MessageBox.Show("Vui lòng mở file Drawing (.idw)!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show("Vui lòng mở file Drawing (.idw)!", "Lỗi",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error)
                     Exit Sub
                 End If
 
@@ -31,40 +45,20 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                 Dim oSheet As Inventor.Sheet = oDrawDoc.ActiveSheet
 
                 If oSheet.PartsLists.Count < 1 Then
-                    MessageBox.Show("Sheet hiện tại không có Parts List.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    MessageBox.Show("Sheet hiện tại không có Parts List.", "Thông báo",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information)
                     Exit Sub
                 End If
 
                 '=================================================
-                ' 1. NHẬP PREFIX
+                ' FORM TÙY CHỌN — GỘP 3 BƯỚC
                 '=================================================
-                Dim PREFIX As String = InputBox("Nhập PREFIX mã bản vẽ (ví dụ: 1.2.3.)", "PREFIX", "")
+                Dim opt As CategoryOptions = ShowOptionsForm()
+                If opt Is Nothing OrElse opt.Cancelled Then Exit Sub
 
-                If PREFIX Is Nothing OrElse PREFIX.Trim() = "" Then
-                    Exit Sub
-                End If
-                PREFIX = PREFIX.Trim()
-
-                '=================================================
-                ' 2. GHI XUỐNG BOM GỐC?
-                '=================================================
-                Dim writeToBomIdx As Integer = PickFromList("Ghi xuống BOM gốc?", New String() {
-                    "1 - Chỉ ghi trên Parts List (không đụng BOM)",
-                    "2 - Ghi cả Parts List + BOM gốc (Category iProperty)"}, 0)
-
-                If writeToBomIdx < 0 Then Exit Sub
-
-                Dim writeToBom As Boolean = (writeToBomIdx = 1)
-
-                '=================================================
-                ' 3. PHẠM VI
-                '=================================================
-                Dim scopeIdx As Integer = PickFromList("Phạm vi", New String() {
-                    "1 - Chỉ Parts List đầu trên sheet active",
-                    "2 - Tất cả Parts List trên sheet active",
-                    "3 - Tất cả Parts List của toàn bộ Drawing"}, 0)
-
-                If scopeIdx < 0 Then Exit Sub
+                Dim PREFIX As String = opt.Prefix
+                Dim writeToBom As Boolean = opt.WriteToBOM
+                Dim scopeIdx As Integer = opt.Scope - 1
 
                 Dim processed As Integer = 0
                 Dim totalRows As Integer = 0
@@ -75,7 +69,8 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                         totalRows += ProcessOnePartsList(oPartList, PREFIX, writeToBom)
                         processed += 1
                     Catch ex As Exception
-                        MessageBox.Show("Parts List 1:" & vbCrLf & ex.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                        MessageBox.Show("Parts List 1:" & vbCrLf & ex.Message, "Cảnh báo",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     End Try
 
                 ElseIf scopeIdx = 1 Then
@@ -85,8 +80,10 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                             totalRows += ProcessOnePartsList(oPartList, PREFIX, writeToBom)
                             processed += 1
                         Catch exPL As Exception
-                            MessageBox.Show("Sheet: " & oSheet.Name & vbCrLf & "Parts List: " & plIdx.ToString() &
-                                            vbCrLf & exPL.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                            MessageBox.Show("Sheet: " & oSheet.Name & vbCrLf &
+                                            "Parts List: " & plIdx.ToString() & vbCrLf &
+                                            exPL.Message, "Cảnh báo",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         End Try
                     Next
 
@@ -101,20 +98,21 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                                     totalRows += ProcessOnePartsList(oPartList, PREFIX, writeToBom)
                                     processed += 1
                                 Catch exPL As Exception
-                                    MessageBox.Show("Sheet: " & oCurSheet.Name & vbCrLf & "Parts List: " & plIdx.ToString() &
-                                                    vbCrLf & exPL.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                                    MessageBox.Show("Sheet: " & oCurSheet.Name & vbCrLf &
+                                                    "Parts List: " & plIdx.ToString() & vbCrLf &
+                                                    exPL.Message, "Cảnh báo",
+                                                    MessageBoxButtons.OK, MessageBoxIcon.Warning)
                                 End Try
                             Next
                         Catch exSheet As Exception
-                            MessageBox.Show("Lỗi Sheet " & sheetIdx.ToString() & ":" & vbCrLf & exSheet.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                            MessageBox.Show("Lỗi Sheet " & sheetIdx.ToString() & ":" & vbCrLf &
+                                            exSheet.Message, "Cảnh báo",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         End Try
                     Next
                 End If
 
-                Try
-                    oDrawDoc.Update()
-                Catch
-                End Try
+                Try : oDrawDoc.Update() : Catch : End Try
 
                 MessageBox.Show("Hoàn tất!" & vbCrLf &
                                 "Parts List đã xử lý: " & processed.ToString() & vbCrLf &
@@ -126,10 +124,246 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawPartList
                                 MessageBoxIcon.Information)
 
             Catch ex As Exception
-                MessageBox.Show("Lỗi:" & vbCrLf & ex.Message, "Ghi mã bản vẽ (Item → Category)", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show("Lỗi:" & vbCrLf & ex.Message,
+                                "Ghi mã bản vẽ (Item → Category)",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
 
         End Sub
+
+
+        '=========================================================
+        ' FORM TÙY CHỌN — GỘP 3 BƯỚC
+        '=========================================================
+        Private Function ShowOptionsForm() As CategoryOptions
+            Dim opt As New CategoryOptions()
+            Dim _okConfirmed As Boolean = False
+
+            Using frm As New Form()
+                frm.Text = "Ghi mã bản vẽ — Tùy chọn"
+                frm.AutoScaleMode = AutoScaleMode.None
+                frm.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
+                frm.ClientSize = New Drw.Size(660, 560)
+                frm.FormBorderStyle = FormBorderStyle.FixedSingle
+                frm.StartPosition = FormStartPosition.CenterScreen
+                frm.MaximizeBox = False
+                frm.MinimizeBox = False
+                frm.ShowInTaskbar = False
+                frm.BackColor = Drw.Color.FromArgb(245, 245, 245)
+                frm.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+
+                '===== HEADER =====
+                Dim pnlHeader As New Panel()
+                pnlHeader.Location = New Drw.Point(0, 0)
+                pnlHeader.Size = New Drw.Size(660, 75)
+                pnlHeader.BackColor = Drw.Color.FromArgb(45, 100, 180)
+                frm.Controls.Add(pnlHeader)
+
+                Dim lblTitle As New Label()
+                lblTitle.Text = "GHI MÃ BẢN VẼ — ITEM → CATEGORY"
+                lblTitle.Font = New Drw.Font("Segoe UI", 14.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+                lblTitle.ForeColor = Drw.Color.White
+                lblTitle.Dock = DockStyle.Fill
+                lblTitle.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblTitle)
+
+                Dim lblSub As New Label()
+                lblSub.Text = "Ghi mã dạng PREFIX+STT vào cột Category của Parts List"
+                lblSub.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                lblSub.ForeColor = Drw.Color.FromArgb(220, 230, 245)
+                lblSub.Dock = DockStyle.Bottom
+                lblSub.Height = 20
+                lblSub.TextAlign = Drw.ContentAlignment.MiddleCenter
+                pnlHeader.Controls.Add(lblSub)
+
+                '===== GROUP 1: PREFIX =====
+                Dim gb1 As New GroupBox() With {
+                    .Text = "1. PREFIX mã bản vẽ",
+                    .Location = New Drw.Point(15, 90),
+                    .Size = New Drw.Size(630, 100),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb1)
+
+                Dim lblPrefix As New Label() With {
+                    .Text = "Nhập PREFIX:",
+                    .Location = New Drw.Point(25, 38),
+                    .Size = New Drw.Size(130, 25),
+                    .TextAlign = Drw.ContentAlignment.MiddleLeft,
+                    .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+                gb1.Controls.Add(lblPrefix)
+
+                Dim txtPrefix As New System.Windows.Forms.TextBox() With {
+                    .Text = "",
+                    .Location = New Drw.Point(160, 38),
+                    .Size = New Drw.Size(440, 25),
+                    .Font = New Drw.Font("Segoe UI", 10.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+                gb1.Controls.Add(txtPrefix)
+
+                Dim lblHint As New Label() With {
+                    .Text = "Ví dụ: 1.2.3.  →  mã sẽ ghi 1.2.3.1, 1.2.3.2, 1.2.3.3...",
+                    .Location = New Drw.Point(160, 68),
+                    .Size = New Drw.Size(440, 20),
+                    .ForeColor = Drw.Color.FromArgb(140, 140, 140),
+                    .Font = New Drw.Font("Segoe UI", 8.5F, Drw.FontStyle.Italic, Drw.GraphicsUnit.Point)}
+                gb1.Controls.Add(lblHint)
+
+                '===== GROUP 2: GHI BOM =====
+                Dim gb2 As New GroupBox() With {
+                    .Text = "2. Ghi xuống BOM gốc?",
+                    .Location = New Drw.Point(15, 200),
+                    .Size = New Drw.Size(630, 130),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb2)
+
+                Dim rdoPartsOnly As New RadioButton() With {
+                    .Text = "Chỉ ghi trên Parts List (không đụng BOM)",
+                    .Location = New Drw.Point(25, 32),
+                    .Size = New Drw.Size(580, 25),
+                    .Checked = True,
+                    .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(rdoPartsOnly)
+
+                Dim lblNote1 As New Label() With {
+                    .Text = "→ Mã chỉ xuất hiện trên bản vẽ, không ảnh hưởng file Part/Assembly",
+                    .Location = New Drw.Point(45, 55),
+                    .Size = New Drw.Size(560, 20),
+                    .ForeColor = Drw.Color.FromArgb(140, 140, 140),
+                    .Font = New Drw.Font("Segoe UI", 8.5F, Drw.FontStyle.Italic, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(lblNote1)
+
+                Dim rdoWriteBom As New RadioButton() With {
+                    .Text = "Ghi cả Parts List + BOM gốc (Category iProperty)",
+                    .Location = New Drw.Point(25, 82),
+                    .Size = New Drw.Size(580, 25),
+                    .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(rdoWriteBom)
+
+                Dim lblNote2 As New Label() With {
+                    .Text = "→ Ghi vào iProperty Category của từng Part/Assembly",
+                    .Location = New Drw.Point(45, 105),
+                    .Size = New Drw.Size(560, 20),
+                    .ForeColor = Drw.Color.FromArgb(140, 140, 140),
+                    .Font = New Drw.Font("Segoe UI", 8.5F, Drw.FontStyle.Italic, Drw.GraphicsUnit.Point)}
+                gb2.Controls.Add(lblNote2)
+
+                '===== GROUP 3: PHẠM VI =====
+                Dim gb3 As New GroupBox() With {
+                    .Text = "3. Phạm vi áp dụng",
+                    .Location = New Drw.Point(15, 340),
+                    .Size = New Drw.Size(630, 130),
+                    .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                    .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                    .BackColor = Drw.Color.White}
+                frm.Controls.Add(gb3)
+
+                Dim rdoScope(2) As RadioButton
+                Dim scopeTexts As String() = {
+                    "Chỉ Parts List đầu tiên trên Sheet đang mở",
+                    "Tất cả Parts List trên Sheet đang mở",
+                    "Tất cả Parts List của toàn bộ Drawing"
+                }
+
+                For i As Integer = 0 To 2
+                    Dim rdo As New RadioButton() With {
+                        .Text = scopeTexts(i),
+                        .Location = New Drw.Point(25, 30 + i * 30),
+                        .Size = New Drw.Size(590, 25),
+                        .Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point),
+                        .Checked = (i = 0)}
+                    gb3.Controls.Add(rdo)
+                    rdoScope(i) = rdo
+                Next
+
+                '===== NÚT THỰC HIỆN =====
+                Dim btnOK As New Button()
+                btnOK.Text = "THỰC HIỆN"
+                btnOK.Size = New Drw.Size(170, 46)
+                btnOK.Location = New Drw.Point(475, 490)
+                btnOK.FlatStyle = FlatStyle.Flat
+                btnOK.FlatAppearance.BorderSize = 0
+                btnOK.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(60, 115, 195)
+                btnOK.FlatAppearance.MouseDownBackColor = Drw.Color.FromArgb(30, 80, 155)
+                btnOK.BackColor = Drw.Color.FromArgb(45, 100, 180)
+                btnOK.ForeColor = Drw.Color.White
+                btnOK.Font = New Drw.Font("Segoe UI", 10.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+                btnOK.Cursor = Cursors.Hand
+                btnOK.UseVisualStyleBackColor = False
+
+                AddHandler btnOK.Click, Sub()
+                                            If String.IsNullOrWhiteSpace(txtPrefix.Text) Then
+                                                MessageBox.Show("PREFIX không được để trống.",
+                                                                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                                                txtPrefix.Focus()
+                                                Return
+                                            End If
+
+                                            opt.Prefix = txtPrefix.Text.Trim()
+                                            opt.WriteToBOM = rdoWriteBom.Checked
+
+                                            For i As Integer = 0 To 2
+                                                If rdoScope(i).Checked Then
+                                                    opt.Scope = i + 1
+                                                    Exit For
+                                                End If
+                                            Next
+
+                                            opt.Cancelled = False
+                                            _okConfirmed = True
+                                            frm.DialogResult = DialogResult.OK
+                                            frm.Close()
+                                        End Sub
+                frm.Controls.Add(btnOK)
+
+                '===== NÚT HỦY =====
+                Dim btnCancel As New Button()
+                btnCancel.Text = "HỦY"
+                btnCancel.Size = New Drw.Size(130, 46)
+                btnCancel.Location = New Drw.Point(335, 490)
+                btnCancel.FlatStyle = FlatStyle.Flat
+                btnCancel.FlatAppearance.BorderSize = 1
+                btnCancel.FlatAppearance.BorderColor = Drw.Color.FromArgb(200, 200, 200)
+                btnCancel.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(235, 235, 235)
+                btnCancel.FlatAppearance.MouseDownBackColor = Drw.Color.FromArgb(215, 215, 215)
+                btnCancel.BackColor = Drw.Color.FromArgb(250, 250, 250)
+                btnCancel.ForeColor = Drw.Color.FromArgb(60, 60, 60)
+                btnCancel.Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+                btnCancel.Cursor = Cursors.Hand
+                btnCancel.UseVisualStyleBackColor = False
+
+                AddHandler btnCancel.Click, Sub()
+                                                opt.Cancelled = True
+                                                frm.DialogResult = DialogResult.Cancel
+                                                frm.Close()
+                                            End Sub
+                frm.Controls.Add(btnCancel)
+
+                frm.AcceptButton = btnOK
+                frm.CancelButton = btnCancel
+
+                AddHandler frm.FormClosing, Sub(sender, e)
+                                                If Not _okConfirmed Then opt.Cancelled = True
+                                            End Sub
+
+                frm.ShowDialog()
+            End Using
+
+            Return opt
+        End Function
+
+
+        '=========================================================
+        ' CÁC HÀM BÊN DƯỚI GIỮ NGUYÊN 100%
+        '=========================================================
+        ' ProcessOnePartsList, WriteCategoryToBOM, SetCategoryProperty,
+        ' FindItemColumn, FindCategoryColumn, GetCellValue, SetCell,
+        ' PickFromList
+
+        ' [Dán lại các hàm này từ code cũ của bạn vào đây]
+
 
         '=========================================================
         ' XỬ LÝ 1 PARTS LIST
