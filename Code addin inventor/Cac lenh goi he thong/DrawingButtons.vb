@@ -240,11 +240,16 @@ Namespace ToolInventor2025
 
             Dim DrawingBtn21 As ButtonDefinition = controlDefs.AddButtonDefinition("Đồng bộ Partlist", "ToolInventor2025_Drawing_Btn21", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
                                                                                    "Thay thế văn bản", Dra1SmallIcon21, Dra1LargeIcon21)
-            AddHandler DrawingBtn21.OnExecute, AddressOf Drawing.Buttons.DrawSheet.Drawing_PartsList_Sync2020.OnExecute
+            AddHandler DrawingBtn21.OnExecute, AddressOf Drawing.Buttons.DrawSheet.Drawing_PartsList_Sync.OnExecute
 
             buttonsList.Add(DrawingBtn21)
+            Dim DrawingBtn22 As ButtonDefinition = controlDefs.AddButtonDefinition("Draw_AutoBalloon", "ToolInventor2025_Drawing_Btn22", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                                                                                   "Thay thế văn bản", Dra1SmallIcon22, Dra1LargeIcon22)
+            AddHandler DrawingBtn22.OnExecute, AddressOf Drawing.Buttons.DrawView.Draw_AutoBalloon.OnExecute
 
-            ''''''''' tool ngoài
+            buttonsList.Add(DrawingBtn22)
+            ''''''''' tool ngoàiD
+            ''''''''' tool ngoài 
 
             Dim DrawingBtn16 As ButtonDefinition = controlDefs.AddButtonDefinition("Mở vị trí Lưu File", "ToolInventor2025_Drawing_Btn16", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
                                                                                    "Mở vị trí lưu file", Dra1SmallIcon16, Dra1LargeIcon16)

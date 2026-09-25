@@ -11,7 +11,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
     ' ============================================================
     ' MODULE — Đồng bộ / Copy PartsList (Inventor 2025)
     ' ============================================================
-    Public Module Drawing_PartsList_Sync2020
+    Public Module Drawing_PartsList_Sync
 
         ' =====================================================
         ' ENTRY POINT
@@ -691,7 +691,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 _cboSrcSheet.Items.Clear()
                 _cboDstSheet.Items.Clear()
 
-                For Each n In Drawing_PartsList_Sync2020.GetSheetNames()
+                For Each n In Drawing_PartsList_Sync.GetSheetNames()
                     _cboSrcSheet.Items.Add(n)
                     _cboDstSheet.Items.Add(n)
                 Next
@@ -710,7 +710,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Try
                 _cboSrcPL.Items.Clear()
                 If _cboSrcSheet.SelectedItem Is Nothing Then Return
-                For Each p In Drawing_PartsList_Sync2020.GetPartsListsOnSheet(_cboSrcSheet.SelectedItem.ToString())
+                For Each p In Drawing_PartsList_Sync.GetPartsListsOnSheet(_cboSrcSheet.SelectedItem.ToString())
                     _cboSrcPL.Items.Add(p)
                 Next
                 If _cboSrcPL.Items.Count > 0 Then _cboSrcPL.SelectedIndex = 0
@@ -725,7 +725,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 If _cboSrcPL.SelectedItem Is Nothing Then Return
 
                 Dim idx As Integer = ParsePlIndex(_cboSrcPL.SelectedItem.ToString())
-                Dim cols = Drawing_PartsList_Sync2020.GetColumns(_cboSrcSheet.SelectedItem.ToString(), idx)
+                Dim cols = Drawing_PartsList_Sync.GetColumns(_cboSrcSheet.SelectedItem.ToString(), idx)
                 For Each c In cols
                     Dim line As String = c.Title
                     If Not String.IsNullOrEmpty(c.PropSet) OrElse Not String.IsNullOrEmpty(c.PropName) Then
@@ -741,7 +741,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Try
                 _cboDstPL.Items.Clear()
                 If _cboDstSheet.SelectedItem Is Nothing Then Return
-                For Each p In Drawing_PartsList_Sync2020.GetPartsListsOnSheet(_cboDstSheet.SelectedItem.ToString())
+                For Each p In Drawing_PartsList_Sync.GetPartsListsOnSheet(_cboDstSheet.SelectedItem.ToString())
                     _cboDstPL.Items.Add(p)
                 Next
                 If _cboDstPL.Items.Count > 0 Then _cboDstPL.SelectedIndex = 0
@@ -784,9 +784,9 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         Return
                     End If
                     Dim dstIdx As Integer = ParsePlIndex(_cboDstPL.SelectedItem.ToString())
-                    Drawing_PartsList_Sync2020.SyncColumns(srcSheet, srcIdx, dstSheet, dstIdx)
+                    Drawing_PartsList_Sync.SyncColumns(srcSheet, srcIdx, dstSheet, dstIdx)
                 Else
-                    Drawing_PartsList_Sync2020.CopyPartsList(srcSheet, srcIdx, dstSheet)
+                    Drawing_PartsList_Sync.CopyPartsList(srcSheet, srcIdx, dstSheet)
                 End If
 
             Catch ex As Exception
