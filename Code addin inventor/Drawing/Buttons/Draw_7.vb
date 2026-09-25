@@ -10,7 +10,7 @@ Imports System.Runtime.InteropServices
 Namespace ToolInventor2025.Drawing.Buttons
 
     '=============================================================
-    ' SHEET NAVIGATOR BUTTON — 1 hàng, padding 5px, form 220px
+    ' SHEET NAVIGATOR BUTTON — 1 hàng, 230×40
     '=============================================================
     Public Module Draw_7
 
@@ -72,7 +72,7 @@ Namespace ToolInventor2025.Drawing.Buttons
 
 
     '=============================================================
-    ' SHEET NAVIGATOR FORM — 220px
+    ' SHEET NAVIGATOR FORM — 230×40
     '=============================================================
     Public Class ThanhNSheetNavigatorForm
         Inherits System.Windows.Forms.Form
@@ -116,7 +116,7 @@ Namespace ToolInventor2025.Drawing.Buttons
 
         '--- Kích thước ---
         Private Const PAD As Integer = 5
-        Private Const BTN_H As Integer = 20
+        Private Const BTN_H As Integer = 30
 
         '=========================================================
         ' SHOW WITHOUT ACTIVATION
@@ -141,11 +141,11 @@ Namespace ToolInventor2025.Drawing.Buttons
 
             invApp = app
 
-            '--- Form setup — 220×30 với padding 5px ---
+            '--- Form setup — 230×40 ---
             Me.Text = ""
             Me.AutoScaleMode = AutoScaleMode.None
             Me.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
-            Me.ClientSize = New Drw.Size(220, 30)          ' ⭐ 220px
+            Me.ClientSize = New Drw.Size(230, 40)          ' ⭐ 230×40
             Me.FormBorderStyle = FormBorderStyle.None
             Me.StartPosition = FormStartPosition.Manual
             Me.ShowInTaskbar = False
@@ -181,10 +181,10 @@ Namespace ToolInventor2025.Drawing.Buttons
         End Sub
 
         '=========================================================
-        ' BUILD UI — 1 HÀNG, FORM 220px
+        ' BUILD UI — 1 HÀNG, 230×40
         '
         ' Layout:
-        '   [5]  |< [3] < [3] [N]  [3] OK [3] > [3] >| [9] ✕ [5]
+        '   [5] |<  [3] <  [3] [ N ] [3] OK [3] > [3] >| [5] ✕ [5]
         '=========================================================
         Private Sub BuildUI()
 
@@ -197,10 +197,10 @@ Namespace ToolInventor2025.Drawing.Buttons
             btnFirst = New Button()
             btnFirst.Text = "|<"
             btnFirst.Location = New Drw.Point(x, yBtn)
-            btnFirst.Size = New Drw.Size(22, BTN_H)
+            btnFirst.Size = New Drw.Size(24, BTN_H)
             ApplyToolbarButtonStyle(btnFirst)
             Me.Controls.Add(btnFirst)
-            x += 22 + 3                                     ' = 30
+            x += 24 + 3                                     ' = 32
 
             '═════════════════════════════════════════════════════
             ' NÚT <
@@ -208,24 +208,24 @@ Namespace ToolInventor2025.Drawing.Buttons
             btnPrev = New Button()
             btnPrev.Text = "<"
             btnPrev.Location = New Drw.Point(x, yBtn)
-            btnPrev.Size = New Drw.Size(22, BTN_H)
+            btnPrev.Size = New Drw.Size(24, BTN_H)
             ApplyToolbarButtonStyle(btnPrev)
             Me.Controls.Add(btnPrev)
-            x += 22 + 3                                     ' = 55
+            x += 24 + 3                                     ' = 59
 
             '═════════════════════════════════════════════════════
-            ' TEXTBOX — rộng 56 (thay vì 46)
+            ' TEXTBOX — rộng 56
             '═════════════════════════════════════════════════════
             txtPage = New System.Windows.Forms.TextBox()
-            txtPage.Location = New Drw.Point(x, yBtn + 2)
-            txtPage.Size = New Drw.Size(56, 15)
+            txtPage.Location = New Drw.Point(x, yBtn + 7)  ' 30-16 = 14, /2 = 7
+            txtPage.Size = New Drw.Size(56, 16)
             txtPage.TextAlign = HorizontalAlignment.Center
-            txtPage.Font = New Drw.Font("Segoe UI", 6.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            txtPage.Font = New Drw.Font("Segoe UI", 8.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             txtPage.BackColor = Drw.Color.FromArgb(30, 30, 34)
             txtPage.ForeColor = Drw.Color.White
             txtPage.BorderStyle = BorderStyle.FixedSingle
             Me.Controls.Add(txtPage)
-            x += 56 + 3                                     ' = 114
+            x += 56 + 3                                     ' = 118
 
             '═════════════════════════════════════════════════════
             ' NÚT OK
@@ -233,13 +233,13 @@ Namespace ToolInventor2025.Drawing.Buttons
             Dim btnGo As New Button()
             btnGo.Text = "OK"
             btnGo.Location = New Drw.Point(x, yBtn)
-            btnGo.Size = New Drw.Size(26, BTN_H)
+            btnGo.Size = New Drw.Size(30, BTN_H)
             ApplyToolbarButtonStyle(btnGo)
             btnGo.BackColor = Drw.Color.FromArgb(45, 100, 180)
             btnGo.ForeColor = Drw.Color.White
-            btnGo.Font = New Drw.Font("Segoe UI", 6.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            btnGo.Font = New Drw.Font("Segoe UI", 7.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             Me.Controls.Add(btnGo)
-            x += 26 + 3                                     ' = 143
+            x += 30 + 3                                     ' = 151
 
             '═════════════════════════════════════════════════════
             ' NÚT >
@@ -247,10 +247,10 @@ Namespace ToolInventor2025.Drawing.Buttons
             btnNext = New Button()
             btnNext.Text = ">"
             btnNext.Location = New Drw.Point(x, yBtn)
-            btnNext.Size = New Drw.Size(22, BTN_H)
+            btnNext.Size = New Drw.Size(24, BTN_H)
             ApplyToolbarButtonStyle(btnNext)
             Me.Controls.Add(btnNext)
-            x += 22 + 3                                     ' = 168
+            x += 24 + 3                                     ' = 178
 
             '═════════════════════════════════════════════════════
             ' NÚT >|
@@ -258,23 +258,23 @@ Namespace ToolInventor2025.Drawing.Buttons
             btnLast = New Button()
             btnLast.Text = ">|"
             btnLast.Location = New Drw.Point(x, yBtn)
-            btnLast.Size = New Drw.Size(22, BTN_H)
+            btnLast.Size = New Drw.Size(24, BTN_H)
             ApplyToolbarButtonStyle(btnLast)
             Me.Controls.Add(btnLast)
-            x += 22 + 9                                     ' = 199 (gap 9px)
+            x += 24 + 5                                     ' = 207 (gap 5px)
 
             '═════════════════════════════════════════════════════
             ' NÚT ✕
             '═════════════════════════════════════════════════════
             btnClose = New Button()
             btnClose.Text = "✕"
-            btnClose.Location = New Drw.Point(x, yBtn + 3)
-            btnClose.Size = New Drw.Size(16, 14)
+            btnClose.Location = New Drw.Point(x, yBtn + 8)  ' căn giữa: (30-14)/2 = 8
+            btnClose.Size = New Drw.Size(18, 14)
             ApplyToolbarButtonStyle(btnClose)
             btnClose.ForeColor = Drw.Color.FromArgb(255, 180, 180)
-            btnClose.Font = New Drw.Font("Segoe UI", 5.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            btnClose.Font = New Drw.Font("Segoe UI", 6.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             Me.Controls.Add(btnClose)
-            '--- x = 199, + 16 = 215, padding phải = 220 - 215 = 5px ✓
+            '--- x = 207, + 18 = 225, padding phải = 230 - 225 = 5px ✓
 
             '═════════════════════════════════════════════════════
             ' EVENTS
@@ -378,7 +378,7 @@ Namespace ToolInventor2025.Drawing.Buttons
             btn.FlatAppearance.BorderColor = Drw.Color.FromArgb(90, 90, 100)
             btn.FlatAppearance.MouseOverBackColor = Drw.Color.FromArgb(80, 80, 95)
             btn.FlatAppearance.MouseDownBackColor = Drw.Color.FromArgb(45, 100, 180)
-            btn.Font = New Drw.Font("Segoe UI", 6.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            btn.Font = New Drw.Font("Segoe UI", 7.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             btn.TabStop = False
             btn.Cursor = Cursors.Hand
             btn.UseVisualStyleBackColor = False
