@@ -8,8 +8,9 @@ Imports Drw = System.Drawing
 
 Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
+
     ' ============================================================
-    ' MODULE — AUTO BALLOON (hỗ trợ 1 sheet hoặc TẤT CẢ sheet)
+    ' MODULE — AUTO BALLOON (1 sheet hoặc TẤT CẢ sheet)
     ' ============================================================
     Public Module Draw_AutoBalloon
 
@@ -62,7 +63,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
 
         '=============================================================
-        ' LẤY DRAWING VIEW TRÊN SHEET — chỉ view có model
+        ' LẤY DRAWING VIEW TRÊN SHEET
         '=============================================================
         Public Function GetDrawingViewsOnSheet(sheetName As String) As List(Of String)
             Dim result As New List(Of String)
@@ -112,6 +113,170 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
 
         '=============================================================
+        ' ⭐ HELPER: LẤY OCCURRENCE TỪ DRAWING CURVE
+        '   ModelGeometry là EdgeProxy/FaceProxy/VertexProxy — KHÔNG phải occ
+        '=============================================================
+        Private Function GetOccurrenceFromCurve(dc As Inventor.DrawingCurve) As Inventor.ComponentOccurrence
+            If dc Is Nothing Then Return Nothing
+
+            Dim mg As Object = Nothing
+            Try : mg = dc.ModelGeometry : Catch : End Try
+            If mg Is Nothing Then Return Nothing
+
+            ' ─── EdgeProxy ───
+            Try
+                If TypeOf mg Is Inventor.EdgeProxy Then
+                    Return CType(mg, Inventor.EdgeProxy).ContainingOccurrence
+                End If
+            Catch
+            End Try
+
+            ' ─── FaceProxy ───
+            Try
+                If TypeOf mg Is Inventor.FaceProxy Then
+                    Return CType(mg, Inventor.FaceProxy).ContainingOccurrence
+                End If
+            Catch
+            End Try
+
+            ' ─── VertexProxy ───
+            Try
+                If TypeOf mg Is Inventor.VertexProxy Then
+                    Return CType(mg, Inventor.VertexProxy).ContainingOccurrence
+                End If
+            Catch
+            End Try
+
+            ' ─── Fallback hiếm ───
+            Try
+                If TypeOf mg Is Inventor.ComponentOccurrence Then
+                    Return CType(mg, Inventor.ComponentOccurrence)
+                End If
+            Catch
+            End Try
+
+            Return Nothing
+        End Function
+
+
+        '=============================================================
+        ' ⭐ ĐỌC PARTSLIST — KHÔNG DÙNG TYPE PartsListCells
+        '=============================================================
+        Private Sub ReadPartsList(ByVal oPL As Inventor.PartsList,
+                                   ByRef plItemNums As List(Of String),
+                                   ByRef plPartNums As List(Of String),
+                                   ByRef errMsg As String)
+
+            plItemNums = New List(Of String)
+            plPartNums = New List(Of String)
+            errMsg = ""
+
+            Try
+                ' ─── Xác định cột Item / Part Number theo tên header ───
+                Dim colItemIdx As Integer = 1
+                Dim colPartIdx As Integer = 3
+                Dim foundItemCol As Boolean = False
+                Dim foundPartCol As Boolean = False
+
+                Try
+                    Dim colsObj As Object = oPL.PartsListColumns
+                    Dim colCount As Integer = CInt(colsObj.Count)
+                    For ci As Integer = 1 To colCount
+                        Dim colObj As Object = colsObj.Item(ci)
+                        Dim title As String = ""
+                        Try : title = colObj.Title.ToString().Trim() : Catch : End Try
+
+                        ' Item number column
+                        If title.Equals("ITEM", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("ITEM NO.", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("ITEM NO", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("ITEM NUMBER", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("STT", StringComparison.OrdinalIgnoreCase) Then
+                            colItemIdx = ci
+                            foundItemCol = True
+                        End If
+
+                        ' Part number column — nhận cả STOCK NUMBER
+                        If title.Equals("PART NUMBER", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("PART NO.", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("PART NO", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("STOCK NUMBER", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("STOCK NO.", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("STOCK NO", StringComparison.OrdinalIgnoreCase) OrElse
+                           title.Equals("PN", StringComparison.OrdinalIgnoreCase) Then
+                            colPartIdx = ci
+                            foundPartCol = True
+                        End If
+                    Next
+                Catch
+                End Try
+
+                ' ─── Đọc từng dòng — late binding ───
+                Dim rowsObj As Object = oPL.PartsListRows
+                Dim rowCount As Integer = CInt(rowsObj.Count)
+
+                For i As Integer = 1 To rowCount
+                    Dim rowObj As Object = Nothing
+                    Try : rowObj = rowsObj.Item(i) : Catch : End Try
+                    If rowObj Is Nothing Then Continue For
+
+                    Dim itemNum As String = ""
+                    Dim partNum As String = ""
+
+                    ' Cột Item
+                    If foundItemCol Then
+                        Try
+                            Dim cellObj As Object = rowObj.Item(colItemIdx)
+                            If cellObj IsNot Nothing Then
+                                Dim v As Object = cellObj.Value
+                                If v IsNot Nothing Then itemNum = v.ToString().Trim()
+                            End If
+                        Catch
+                        End Try
+                    End If
+
+                    ' Cột Part Number
+                    Try
+                        Dim cellObj As Object = rowObj.Item(colPartIdx)
+                        If cellObj IsNot Nothing Then
+                            Dim v As Object = cellObj.Value
+                            If v IsNot Nothing Then partNum = v.ToString().Trim()
+                        End If
+                    Catch
+                    End Try
+
+                    plItemNums.Add(itemNum)
+                    plPartNums.Add(partNum)
+                Next
+
+                ' ─── Fallback: nếu PL không có cột Item → dùng số thứ tự ───
+                If Not foundItemCol Then
+                    For i As Integer = 0 To plItemNums.Count - 1
+                        plItemNums(i) = (i + 1).ToString()
+                    Next
+                Else
+                    ' Nếu cột Item có nhưng toàn rỗng → fallback
+                    Dim allEmpty As Boolean = True
+                    For i As Integer = 0 To plItemNums.Count - 1
+                        If Not String.IsNullOrEmpty(plItemNums(i)) Then
+                            allEmpty = False
+                            Exit For
+                        End If
+                    Next
+                    If allEmpty Then
+                        For i As Integer = 0 To plItemNums.Count - 1
+                            plItemNums(i) = (i + 1).ToString()
+                        Next
+                    End If
+                End If
+
+            Catch ex As Exception
+                errMsg = ex.Message
+            End Try
+        End Sub
+
+
+        '=============================================================
         ' ⭐ TẠO BALLOON CHO 1 SHEET
         '=============================================================
         Public Sub CreateBalloonsForSheet(sheetName As String,
@@ -136,7 +301,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                 Try : oSheet.Activate() : Catch : End Try
                 Try : drawDoc.Update() : Catch : End Try
 
-                ' ─── Lấy view và PL ───
+                ' ─── Lấy view + PL ───
                 Dim oView As Inventor.DrawingView = Nothing
                 Try : oView = oSheet.DrawingViews.Item(viewIndex) : Catch : End Try
                 If oView Is Nothing Then
@@ -151,106 +316,56 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                     Return
                 End If
 
-                ' ─── Đọc PartsList: Item Number + Part Number ───
+                ' ─── Đọc PL ───
                 Dim plItemNums As New List(Of String)
                 Dim plPartNums As New List(Of String)
+                Dim plErr As String = ""
 
-                ' ⭐ Xác định cột Item / Part Number theo tên header
-                Dim colItemIdx As Integer = 1
-                Dim colPartIdx As Integer = 3
+                ReadPartsList(oPL, plItemNums, plPartNums, plErr)
 
-                Try
-                    Dim colsObj As Object = oPL.PartsListColumns
-                    Dim colCount As Integer = CInt(colsObj.Count)
-                    For ci As Integer = 1 To colCount
-                        Dim colObj As Object = colsObj.Item(ci)
-                        Dim title As String = ""
-                        Try : title = colObj.Title.ToString() : Catch : End Try
-
-                        If title.Equals("ITEM", StringComparison.OrdinalIgnoreCase) OrElse
-           title.Equals("ITEM NO.", StringComparison.OrdinalIgnoreCase) OrElse
-           title.Equals("ITEM NUMBER", StringComparison.OrdinalIgnoreCase) Then
-                            colItemIdx = ci
-                        End If
-
-                        If title.Equals("PART NUMBER", StringComparison.OrdinalIgnoreCase) OrElse
-           title.Equals("PART NO.", StringComparison.OrdinalIgnoreCase) OrElse
-           title.Equals("PN", StringComparison.OrdinalIgnoreCase) Then
-                            colPartIdx = ci
-                        End If
-                    Next
-                Catch
-                End Try
-
-                Try
-                    ' ⭐ Late binding — không dùng Inventor.PartsListCells
-                    Dim rowsObj As Object = oPL.PartsListRows
-                    Dim rowCount As Integer = CInt(rowsObj.Count)
-
-                    For i As Integer = 1 To rowCount
-                        Dim rowObj As Object = Nothing
-                        Try : rowObj = rowsObj.Item(i) : Catch : End Try
-                        If rowObj Is Nothing Then Continue For
-
-                        Dim itemNum As String = ""
-                        Dim partNum As String = ""
-
-                        ' Cột Item
-                        Try
-                            Dim cellObj As Object = rowObj.Item(colItemIdx)
-                            If cellObj IsNot Nothing Then
-                                Dim v As Object = cellObj.Value
-                                If v IsNot Nothing Then itemNum = v.ToString().Trim()
-                            End If
-                        Catch
-                        End Try
-
-                        ' Cột Part Number
-                        Try
-                            Dim cellObj As Object = rowObj.Item(colPartIdx)
-                            If cellObj IsNot Nothing Then
-                                Dim v As Object = cellObj.Value
-                                If v IsNot Nothing Then partNum = v.ToString().Trim()
-                            End If
-                        Catch
-                        End Try
-
-                        plItemNums.Add(itemNum)
-                        plPartNums.Add(partNum)
-                    Next
-                Catch ex As Exception
-                    errLog &= "• Sheet '" & sheetName & "': đọc PL lỗi — " & ex.Message & vbCrLf
+                If Not String.IsNullOrEmpty(plErr) Then
+                    errLog &= "• Sheet '" & sheetName & "': đọc PL lỗi — " & plErr & vbCrLf
                     Return
-                End Try
+                End If
+
+                If plItemNums.Count = 0 Then
+                    errLog &= "• Sheet '" & sheetName & "': PartsList không có dòng nào" & vbCrLf
+                    Return
+                End If
 
                 ' ─── Map PartNumber → Item Number ───
                 Dim pnToItem As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
                 For i As Integer = 0 To plItemNums.Count - 1
-                    Dim pn As String = plPartNums(i).Trim()
-                    Dim item As String = plItemNums(i).Trim()
+                    Dim pn As String = plPartNums(i)
+                    Dim item As String = plItemNums(i)
                     If Not String.IsNullOrEmpty(pn) AndAlso Not pnToItem.ContainsKey(pn) Then
                         pnToItem.Add(pn, item)
                     End If
                 Next
 
-                ' ─── Quét DrawingCurves để lấy occurrence → PartNumber ───
-                Dim balloons As Inventor.Balloons = oView.Balloons
+                If pnToItem.Count = 0 Then
+                    errLog &= "• Sheet '" & sheetName & "': PL không đọc được Part Number nào" & vbCrLf
+                    Return
+                End If
 
-                ' ⭐ Dùng API CreateBalloon nếu có, fallback Add
+                ' ─── Balloons collection thuộc SHEET ───
+                Dim balloons As Inventor.Balloons = Nothing
+                Try : balloons = oSheet.Balloons : Catch : End Try
+                If balloons Is Nothing Then
+                    errLog &= "• Sheet '" & sheetName & "': không truy cập được Balloons collection" & vbCrLf
+                    Return
+                End If
+
+                ' ─── Quét DrawingCurves để lấy occurrence → PartNumber ───
+                Dim processedPartNums As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+
                 For Each dc As Inventor.DrawingCurve In oView.DrawingCurves
                     Try
-                        Dim occ As Inventor.ComponentOccurrence = Nothing
-                        Try
-                            Dim mg As Object = dc.ModelGeometry
-                            If TypeOf mg Is Inventor.ComponentOccurrence Then
-                                occ = CType(mg, Inventor.ComponentOccurrence)
-                            End If
-                        Catch
-                        End Try
-
+                        ' ⭐ Lấy occurrence ĐÚNG CÁCH
+                        Dim occ As Inventor.ComponentOccurrence = GetOccurrenceFromCurve(dc)
                         If occ Is Nothing Then Continue For
 
-                        ' Lấy PartNumber của occurrence
+                        ' Lấy PartNumber
                         Dim pn As String = ""
                         Try
                             Dim propSets As Inventor.PropertySets = occ.Definition.Document.PropertySets
@@ -270,53 +385,30 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                             Continue For
                         End If
 
-                        Dim itemNum As String = pnToItem(pn)
-
-                        ' ⭐ Kiểm tra đã có balloon cho occ này chưa
-                        Dim existed As Boolean = False
-                        Try
-                            For i As Integer = 1 To balloons.Count
-                                Dim b As Inventor.Balloon = balloons.Item(i)
-                                Try
-                                    ' Balloon có thuộc tính AttachedEntity
-                                    If b.AttachedEntity Is occ Then
-                                        existed = True
-                                        Exit For
-                                    End If
-                                Catch
-                                End Try
-                            Next
-                        Catch
-                        End Try
-
-                        If existed Then
+                        ' Mỗi PartNumber chỉ tạo 1 balloon (bỏ qua các occurrence cùng part)
+                        If processedPartNums.Contains(pn) Then
                             skipCount += 1
                             Continue For
                         End If
+
+                        Dim itemNum As String = pnToItem(pn)
 
                         ' ─── TẠO BALLOON ───
                         Try
                             Dim pos As Inventor.Point2d = GetDefaultBalloonPosition(oView, occ)
                             Dim b As Inventor.Balloon = Nothing
 
-                            ' ⭐ Thử CreateBalloon (Inventor 2018+)
+                            ' Thử Add trên Sheet.Balloons
                             Try
-                                b = oView.CreateBalloon(occ, pos)
-                            Catch
+                                b = balloons.Add(itemNum, pos)
+                            Catch exAdd As Exception
+                                errLog &= "• Add lỗi cho " & pn & ": " & exAdd.Message & vbCrLf
                             End Try
 
-                            ' Fallback: Balloons.Add(value, pos)
-                            If b Is Nothing Then
-                                Try
-                                    b = balloons.Add(itemNum, pos)
-                                Catch
-                                End Try
-                            End If
-
                             If b IsNot Nothing Then
-                                ' Set text = Item Number
                                 Try : b.Value = itemNum : Catch : End Try
                                 okCount += 1
+                                processedPartNums.Add(pn)
                             Else
                                 failCount += 1
                                 errLog &= "• " & pn & " (Item " & itemNum & "): không tạo được" & vbCrLf
@@ -331,7 +423,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                 Next
 
                 ' ─── Sắp xếp quanh view ───
-                Try : ArrangeBalloonsAroundView(oView) : Catch : End Try
+                Try : ArrangeBalloonsAroundView(oSheet, oView) : Catch : End Try
 
                 Try : drawDoc.Update2(True) : Catch : End Try
 
@@ -347,8 +439,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
 
         '=============================================================
-        ' ⭐ TẠO BALLOON CHO TẤT CẢ SHEET
-        '   Mỗi sheet tự động lấy view có model + PL đầu tiên
+        ' TẠO BALLOON CHO TẤT CẢ SHEET
         '=============================================================
         Public Sub CreateBalloonsAllSheets(ByRef totalOK As Integer,
                                             ByRef totalSkip As Integer,
@@ -377,8 +468,8 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
                     ' ─── Tìm view có model đầu tiên ───
                     Dim viewIdx As Integer = -1
-                    For i As Integer = 1 To oSheet.DrawingViews.Count
-                        Try
+                    Try
+                        For i As Integer = 1 To oSheet.DrawingViews.Count
                             Dim v As Inventor.DrawingView = oSheet.DrawingViews.Item(i)
                             Dim refDoc As Inventor.Document = Nothing
                             Try : refDoc = v.ReferencedDocumentDescriptor.ReferencedDocument : Catch : End Try
@@ -386,9 +477,9 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                                 viewIdx = i
                                 Exit For
                             End If
-                        Catch
-                        End Try
-                    Next
+                        Next
+                    Catch
+                    End Try
 
                     ' ─── Tìm PartsList đầu tiên ───
                     Dim plIdx As Integer = -1
@@ -403,7 +494,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                         Continue For
                     End If
 
-                    ' ─── Tạo balloon cho sheet này ───
                     Dim ok As Integer = 0, sk As Integer = 0, fl As Integer = 0
                     Dim sheetErr As String = ""
 
@@ -437,7 +527,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
 
         '=============================================================
-        ' TÍNH VỊ TRÍ BALLOON MẶC ĐỊNH — cạnh occurrence
+        ' VỊ TRÍ BALLOON MẶC ĐỊNH — cạnh view
         '=============================================================
         Private Function GetDefaultBalloonPosition(ByVal oView As Inventor.DrawingView,
                                                     ByVal occ As Inventor.ComponentOccurrence) As Inventor.Point2d
@@ -447,8 +537,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                 Dim w As Double = 0, h As Double = 0
                 Try : w = oView.Width : Catch : End Try
                 Try : h = oView.Height : Catch : End Try
-
-                ' Đặt tạm bên phải view
                 Return tg.CreatePoint2d(center.X + w / 2 + 1.5, center.Y + h / 2 - 1.5)
             Catch
                 Return Nothing
@@ -459,9 +547,13 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
         '=============================================================
         ' SẮP XẾP BALLOON QUANH VIEW
         '=============================================================
-        Private Sub ArrangeBalloonsAroundView(ByVal oView As Inventor.DrawingView)
+        Private Sub ArrangeBalloonsAroundView(ByVal oSheet As Inventor.Sheet,
+                                               ByVal oView As Inventor.DrawingView)
             Try
-                Dim balloons As Inventor.Balloons = oView.Balloons
+                Dim balloons As Inventor.Balloons = Nothing
+                Try : balloons = oSheet.Balloons : Catch : End Try
+                If balloons Is Nothing Then Return
+
                 Dim count As Integer = 0
                 Try : count = balloons.Count : Catch : End Try
                 If count <= 1 Then Return
@@ -505,7 +597,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
 
     ' ============================================================
-    ' FORM
+    ' FORM — giữ nguyên
     ' ============================================================
     Public Class Form_AutoBalloon
         Inherits System.Windows.Forms.Form
@@ -770,7 +862,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                     _lstPreview.Items.Add("Trên mỗi sheet, tool sẽ tự động:")
                     _lstPreview.Items.Add("  • Tìm drawing view đầu tiên có model")
                     _lstPreview.Items.Add("  • Tìm PartsList đầu tiên")
-                    _lstPreview.Items.Add("  • Đọc Item Number từ PL")
+                    _lstPreview.Items.Add("  • Đọc Item Number + Part Number từ PL")
                     _lstPreview.Items.Add("  • Quét occurrence trong view")
                     _lstPreview.Items.Add("  • Tạo balloon với số Item tương ứng")
                     _lstPreview.Items.Add("  • Sắp xếp balloon quanh view")
@@ -813,7 +905,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                 Dim errLog As String = ""
 
                 If _rdoAll.Checked Then
-                    ' ⭐ TẤT CẢ SHEET
                     Draw_AutoBalloon.CreateBalloonsAllSheets(
                         ok, sk, fl, sheetsTotal, sheetsSkip, errLog)
 
@@ -837,7 +928,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawView
                                     MessageBoxButtons.OK,
                                     If(fl > 0, MessageBoxIcon.Warning, MessageBoxIcon.Information))
                 Else
-                    ' ─── 1 SHEET ───
                     If _cboSheet.SelectedItem Is Nothing OrElse
                        _cboView.SelectedItem Is Nothing OrElse
                        _cboPL.SelectedItem Is Nothing Then
