@@ -1,10 +1,11 @@
 Option Explicit On
 Option Strict Off
+
 Imports System.Collections.Generic
 Imports System.Windows.Forms
-Imports System.Drawing
-Imports System.Runtime.InteropServices
 Imports Inventor
+Imports System.Runtime.InteropServices
+Imports Drw = System.Drawing
 
 Namespace ToolInventor2025.Drawing.Buttons.Drawdim
 
@@ -14,22 +15,12 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
         End Function
     End Class
 
+
     '=====================================================
-    ' FORM
+    ' FORM — CÓ LOGIC KHÓA TỰ ĐỘNG
     '=====================================================
     Public Class DimCleanupFormaaaga
         Inherits Form
-
-        Private chkDeleteHoleDim As CheckBox
-        Private chkDeleteHoleNote As CheckBox
-        Private chkDeleteAllDim As CheckBox
-        Private chkCenterDimArrange As CheckBox
-        Private chkArrangeDim As CheckBox
-        Private chkCenterDim As CheckBox
-        Private rdoAllViews As RadioButton
-        Private rdoPickViews As RadioButton
-        Private btnOK As Button
-        Private btnCancel As Button
 
         Public ReadOnly Property DeleteHoleDim As Boolean
         Public ReadOnly Property DeleteHoleNote As Boolean
@@ -41,75 +32,171 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
         Public ReadOnly Property PickViews As Boolean
         Public ReadOnly Property Cancelled As Boolean
 
+        Private chkDeleteHoleDim As CheckBox
+        Private chkDeleteHoleNote As CheckBox
+        Private chkDeleteAllDim As CheckBox
+        Private chkCenterDimArrange As CheckBox
+        Private chkArrangeDim As CheckBox
+        Private chkCenterDim As CheckBox
+        Private chkSelectAll As CheckBox
+        Private rdoAllViews As RadioButton
+        Private rdoPickViews As RadioButton
+        Private btnOK As Button
+        Private btnCancel As Button
+
         Public Sub New()
             _Cancelled = False
+
             Me.Text = "Xử lý Dimension bản vẽ"
-            Me.FormBorderStyle = FormBorderStyle.FixedDialog
+            Me.AutoScaleMode = AutoScaleMode.None
+            Me.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
+            Me.FormBorderStyle = FormBorderStyle.FixedSingle
             Me.StartPosition = FormStartPosition.CenterScreen
             Me.MaximizeBox = False
             Me.MinimizeBox = False
-            Me.ClientSize = New Size(300, 370)
+            Me.ShowInTaskbar = False
+            Me.ClientSize = New Drw.Size(660, 640)
+            Me.BackColor = Drw.Color.FromArgb(245, 245, 245)
+            Me.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
 
-            Dim lbl As New Label()
-            lbl.Text = "Chọn thao tác cần thực hiện:"
-            lbl.Location = New System.Drawing.Point(15, 12)
-            lbl.Size = New Size(380, 20)
-            lbl.Font = New Font(lbl.Font, FontStyle.Bold)
-            Me.Controls.Add(lbl)
+            '===== HEADER =====
+            Dim pnlHeader As New Panel()
+            pnlHeader.Location = New Drw.Point(0, 0)
+            pnlHeader.Size = New Drw.Size(660, 75)
+            pnlHeader.BackColor = Drw.Color.FromArgb(45, 100, 180)
+            Me.Controls.Add(pnlHeader)
 
-            Dim lblScope As New Label()
-            lblScope.Text = "— Phạm vi —"
-            lblScope.Location = New System.Drawing.Point(15, 38)
-            lblScope.Size = New Size(380, 18)
-            lblScope.ForeColor = System.Drawing.Color.DarkGreen
-            Me.Controls.Add(lblScope)
+            Dim lblTitle As New Label()
+            lblTitle.Text = "XỬ LÝ DIMENSION BẢN VẼ"
+            lblTitle.Font = New Drw.Font("Segoe UI", 15.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            lblTitle.ForeColor = Drw.Color.White
+            lblTitle.Dock = DockStyle.Fill
+            lblTitle.TextAlign = Drw.ContentAlignment.MiddleCenter
+            pnlHeader.Controls.Add(lblTitle)
 
-            rdoAllViews = New RadioButton()
-            rdoAllViews.Text = "Tất cả View trên sheet"
-            rdoAllViews.Location = New System.Drawing.Point(25, 58)
-            rdoAllViews.Size = New Size(200, 22)
-            rdoAllViews.Checked = True
-            Me.Controls.Add(rdoAllViews)
+            Dim lblSub As New Label()
+            lblSub.Text = "Xóa / Căn chỉnh / Arrange Dimension cho Drawing View"
+            lblSub.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            lblSub.ForeColor = Drw.Color.FromArgb(220, 230, 245)
+            lblSub.Dock = DockStyle.Bottom
+            lblSub.Height = 20
+            lblSub.TextAlign = Drw.ContentAlignment.MiddleCenter
+            pnlHeader.Controls.Add(lblSub)
 
-            rdoPickViews = New RadioButton()
-            rdoPickViews.Text = "Chọn View riêng lẻ (multi-select)"
-            rdoPickViews.Location = New System.Drawing.Point(25, 82)
-            rdoPickViews.Size = New Size(280, 22)
-            Me.Controls.Add(rdoPickViews)
+            '===== CHECKBOX CHỌN TẤT CẢ =====
+            chkSelectAll = New CheckBox() With {
+                .Text = "Chọn tất cả / Bỏ chọn tất cả",
+                .Location = New Drw.Point(20, 85),
+                .Size = New Drw.Size(620, 25),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(45, 100, 180)}
+            AddHandler chkSelectAll.CheckedChanged, AddressOf OnSelectAllChanged
+            Me.Controls.Add(chkSelectAll)
 
-            Dim lbl1 As New Label()
-            lbl1.Text = "— Xóa —"
-            lbl1.Location = New System.Drawing.Point(15, 116)
-            lbl1.Size = New Size(380, 18)
-            lbl1.ForeColor = System.Drawing.Color.DarkRed
-            Me.Controls.Add(lbl1)
+            '===== GROUP 1: PHẠM VI =====
+            Dim gb1 As New GroupBox() With {
+                .Text = "Phạm vi áp dụng",
+                .Location = New Drw.Point(15, 120),
+                .Size = New Drw.Size(630, 100),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                .BackColor = Drw.Color.White}
+            Me.Controls.Add(gb1)
 
-            chkDeleteHoleDim = MakeCheckBox("Xóa Dimension lỗ (Diameter)", 136)
-            chkDeleteHoleNote = MakeCheckBox("Xóa Hole / Thread Note", 162)
-            chkDeleteAllDim = MakeCheckBox("Xóa tất cả Dimension", 188)
+            rdoAllViews = New RadioButton() With {
+                .Text = "Tất cả View trên Sheet",
+                .Location = New Drw.Point(25, 30),
+                .Size = New Drw.Size(280, 25),
+                .Checked = True,
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+            gb1.Controls.Add(rdoAllViews)
 
-            Dim lbl2 As New Label()
-            lbl2.Text = "— Căn chỉnh —"
-            lbl2.Location = New System.Drawing.Point(15, 222)
-            lbl2.Size = New Size(380, 18)
-            lbl2.ForeColor = System.Drawing.Color.DarkBlue
-            Me.Controls.Add(lbl2)
+            rdoPickViews = New RadioButton() With {
+                .Text = "Chọn View riêng lẻ (multi-select)",
+                .Location = New Drw.Point(25, 62),
+                .Size = New Drw.Size(400, 25),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)}
+            gb1.Controls.Add(rdoPickViews)
 
-            chkCenterDim = MakeCheckBox("Căn dim về giữa", 242)
-            chkArrangeDim = MakeCheckBox("Arrange dim (tự sắp xếp)", 268)
-            chkCenterDimArrange = MakeCheckBox("Căn dim về giữa + Arrange", 294)
+            '===== GROUP 2: XÓA =====
+            Dim gb2 As New GroupBox() With {
+                .Text = "Xóa",
+                .Location = New Drw.Point(15, 230),
+                .Size = New Drw.Size(630, 130),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(200, 60, 60),
+                .BackColor = Drw.Color.White}
+            Me.Controls.Add(gb2)
 
+            chkDeleteHoleDim = MakeCheckBox(gb2, "Xóa Dimension lỗ (Diameter)", 30)
+            chkDeleteHoleNote = MakeCheckBox(gb2, "Xóa Hole / Thread Note", 60)
+            chkDeleteAllDim = MakeCheckBox(gb2, "Xóa TẤT CẢ Dimension (Linear + Angular + Hole)", 90)
+
+            ' ⭐ KHI CHỌN "XÓA TẤT CẢ" → KHÓA 2 CÁI TRÊN
+            AddHandler chkDeleteAllDim.CheckedChanged, Sub()
+                                                           Dim locked As Boolean = chkDeleteAllDim.Checked
+
+                                                           If locked Then
+                                                               ' Bỏ tick 2 cái trên khi chọn tất cả
+                                                               chkDeleteHoleDim.Checked = False
+                                                               chkDeleteHoleNote.Checked = False
+                                                           End If
+
+                                                           chkDeleteHoleDim.Enabled = Not locked
+                                                           chkDeleteHoleNote.Enabled = Not locked
+
+                                                           UpdateCheckboxVisual(chkDeleteHoleDim)
+                                                           UpdateCheckboxVisual(chkDeleteHoleNote)
+                                                       End Sub
+
+            '===== GROUP 3: CĂN CHỈNH =====
+            Dim gb3 As New GroupBox() With {
+                .Text = "Căn chỉnh",
+                .Location = New Drw.Point(15, 370),
+                .Size = New Drw.Size(630, 130),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                .BackColor = Drw.Color.White}
+            Me.Controls.Add(gb3)
+
+            chkCenterDim = MakeCheckBox(gb3, "Căn Dimension về giữa (Center Text)", 30)
+            chkArrangeDim = MakeCheckBox(gb3, "Arrange Dimension (tự động sắp xếp)", 60)
+            chkCenterDimArrange = MakeCheckBox(gb3, "Căn về giữa + Arrange (kết hợp)", 90)
+
+            ' ⭐ KHI CHỌN "CĂN + ARRANGE" → KHÓA 2 CÁI TRÊN
+            AddHandler chkCenterDimArrange.CheckedChanged, Sub()
+                                                               Dim locked As Boolean = chkCenterDimArrange.Checked
+
+                                                               If locked Then
+                                                                   chkCenterDim.Checked = False
+                                                                   chkArrangeDim.Checked = False
+                                                               End If
+
+                                                               chkCenterDim.Enabled = Not locked
+                                                               chkArrangeDim.Enabled = Not locked
+
+                                                               UpdateCheckboxVisual(chkCenterDim)
+                                                               UpdateCheckboxVisual(chkArrangeDim)
+                                                           End Sub
+
+            '===== NÚT =====
             btnOK = New Button()
-            btnOK.Text = "Thực hiện"
-            btnOK.Location = New System.Drawing.Point(90, 320)
-            btnOK.Size = New Size(85, 30)
+            btnOK.Text = "THỰC HIỆN"
+            btnOK.Location = New Drw.Point(495, 585)
+            btnOK.Size = New Drw.Size(150, 42)
+            btnOK.BackColor = Drw.Color.FromArgb(45, 100, 180)
+            btnOK.ForeColor = Drw.Color.White
+            btnOK.FlatStyle = FlatStyle.Flat
+            btnOK.Font = New Drw.Font("Segoe UI", 10.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             btnOK.DialogResult = DialogResult.OK
             Me.Controls.Add(btnOK)
 
             btnCancel = New Button()
-            btnCancel.Text = "Hủy"
-            btnCancel.Location = New System.Drawing.Point(190, 320)
-            btnCancel.Size = New Size(85, 30)
+            btnCancel.Text = "HỦY"
+            btnCancel.Location = New Drw.Point(355, 585)
+            btnCancel.Size = New Drw.Size(130, 42)
+            btnCancel.FlatStyle = FlatStyle.Flat
+            btnCancel.Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
             btnCancel.DialogResult = DialogResult.Cancel
             Me.Controls.Add(btnCancel)
 
@@ -117,14 +204,46 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
             Me.CancelButton = btnCancel
         End Sub
 
-        Private Function MakeCheckBox(ByVal text As String, ByVal top As Integer) As CheckBox
+
+        '=========================================================
+        ' UPDATE VISUAL CHO CHECKBOX BỊ KHÓA
+        '=========================================================
+        Private Sub UpdateCheckboxVisual(chk As CheckBox)
+            If chk Is Nothing Then Return
+
+            If chk.Enabled Then
+                chk.ForeColor = Drw.Color.FromArgb(40, 40, 40)
+            Else
+                chk.ForeColor = Drw.Color.FromArgb(170, 170, 170)
+            End If
+        End Sub
+
+
+        Private Function MakeCheckBox(ByVal parent As GroupBox,
+                                      ByVal text As String,
+                                      ByVal top As Integer) As CheckBox
             Dim chk As New CheckBox()
             chk.Text = text
-            chk.Location = New System.Drawing.Point(25, top)
-            chk.Size = New Size(380, 22)
-            Me.Controls.Add(chk)
+            chk.Location = New Drw.Point(20, top)
+            chk.Size = New Drw.Size(590, 25)
+            chk.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            chk.ForeColor = Drw.Color.FromArgb(40, 40, 40)
+            parent.Controls.Add(chk)
             Return chk
         End Function
+
+
+        Private Sub OnSelectAllChanged(ByVal sender As Object, ByVal e As EventArgs)
+            Dim chk As Boolean = chkSelectAll.Checked
+
+            chkDeleteHoleDim.Checked = chk
+            chkDeleteHoleNote.Checked = chk
+            chkDeleteAllDim.Checked = chk
+            chkCenterDim.Checked = chk
+            chkArrangeDim.Checked = chk
+            chkCenterDimArrange.Checked = chk
+        End Sub
+
 
         Public Function ShowAndGet() As Boolean
             Dim result As DialogResult = Me.ShowDialog()
@@ -132,6 +251,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                 _Cancelled = True
                 Return False
             End If
+
             _DeleteHoleDim = chkDeleteHoleDim.Checked
             _DeleteHoleNote = chkDeleteHoleNote.Checked
             _DeleteAllDim = chkDeleteAllDim.Checked
@@ -144,8 +264,9 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
         End Function
     End Class
 
+
     '=====================================================
-    ' MODULE
+    ' MODULE — GIỮ NGUYÊN LOGIC
     '=====================================================
     Public Module draw_3
 
@@ -186,7 +307,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     Try
                         Dim mainHwnd As IntPtr = New IntPtr(invApp.MainFrameHWND)
                         If mainHwnd <> IntPtr.Zero Then
-                            NativeMethods.SetForegroundWindow(mainHwnd)
+                            NativeMethodsaaaga.SetForegroundWindow(mainHwnd)
                             System.Threading.Thread.Sleep(150)
                         End If
                     Catch
@@ -224,7 +345,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     Exit Sub
                 End If
 
-                ' Lấy toàn bộ dim trên sheet thuộc các view đã chọn
                 Dim targetDims As List(Of DrawingDimension) =
                     GetDimensionsForViews(oSheet, selectedViews)
 
@@ -257,8 +377,9 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                         End Try
                     Next
                 End If
+
                 '=====================================================
-                ' 2. XÓA HOLE / THREAD NOTE  (lọc theo view đã chọn)
+                ' 2. XÓA HOLE / THREAD NOTE
                 '=====================================================
                 If form.DeleteHoleNote Then
                     Try
@@ -266,18 +387,13 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
 
                         For Each htNote As HoleThreadNote In oSheet.DrawingNotes.HoleThreadNotes
                             Try
-                                ' Nếu chọn tất cả view → xóa hết
                                 If form.AllViews Then
                                     toDel.Add(htNote)
                                     Continue For
                                 End If
 
-                                ' Lọc theo view: lấy curve / intent gắn với note
                                 Dim noteView As DrawingView = GetViewFromHoleThreadNote(htNote)
-                                If noteView Is Nothing Then
-                                    ' Không xác định được view → bỏ qua khi đang PickViews
-                                    Continue For
-                                End If
+                                If noteView Is Nothing Then Continue For
 
                                 For Each v As DrawingView In selectedViews
                                     If v Is noteView Then
@@ -306,7 +422,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                 ' 3. XÓA TẤT CẢ DIM
                 '=====================================================
                 If form.DeleteAllDim Then
-                    ' Linear / Diameter / Angular... thuộc view
                     Dim toDel As New List(Of DrawingDimension)
                     For Each oDim As DrawingDimension In targetDims
                         toDel.Add(oDim)
@@ -320,7 +435,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                         End Try
                     Next
 
-                    ' HoleThreadNotes
                     Try
                         Dim notes As New List(Of HoleThreadNote)
                         For Each ht As HoleThreadNote In oSheet.DrawingNotes.HoleThreadNotes
@@ -337,7 +451,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     Catch
                     End Try
 
-                    ' Baseline sets
                     Try
                         Dim baseSets As BaselineDimensionSets =
                             oSheet.DrawingDimensions.BaselineDimensionSets
@@ -359,7 +472,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     Catch
                     End Try
 
-                    ' Chain sets
                     Try
                         Dim chainSets As ChainDimensionSets =
                             oSheet.DrawingDimensions.ChainDimensionSets
@@ -382,7 +494,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     End Try
                 End If
 
-                ' Refresh target dims sau khi xóa (cho Center/Arrange)
                 targetDims = GetDimensionsForViews(oSheet, selectedViews)
 
                 '=====================================================
@@ -440,18 +551,15 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
 
         End Sub
 
-        '=====================================================
-        ' LẤY DIM THUỘC CÁC VIEW ĐÃ CHỌN
-        ' (Dim nằm trên Sheet, không phải trên View)
-        '=====================================================
-        Private Function GetDimensionsForViews(
-            oSheet As Sheet,
-            views As List(Of DrawingView)) As List(Of DrawingDimension)
 
+        '=====================================================
+        ' CÁC HÀM BÊN DƯỚI GIỮ NGUYÊN
+        '=====================================================
+        Private Function GetDimensionsForViews(oSheet As Sheet,
+                                               views As List(Of DrawingView)) As List(Of DrawingDimension)
             Dim result As New List(Of DrawingDimension)
 
             Try
-                ' Nếu chọn tất cả view trên sheet → lấy hết
                 If views.Count = oSheet.DrawingViews.Count Then
                     For Each oDim As DrawingDimension In oSheet.DrawingDimensions
                         result.Add(oDim)
@@ -459,7 +567,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     Return result
                 End If
 
-                ' Lọc dim theo view
                 For Each oDim As DrawingDimension In oSheet.DrawingDimensions
                     Try
                         If DimensionBelongsToViews(oDim, views) Then
@@ -474,12 +581,10 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
             Return result
         End Function
 
-        Private Function DimensionBelongsToViews(
-            oDim As DrawingDimension,
-            views As List(Of DrawingView)) As Boolean
 
+        Private Function DimensionBelongsToViews(oDim As DrawingDimension,
+                                                 views As List(Of DrawingView)) As Boolean
             Try
-                ' Thử lấy Intent / Geometry → Parent View
                 Dim intents As Object = Nothing
                 Try
                     intents = CallByName(oDim, "Intent", CallType.Get)
@@ -496,7 +601,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     End If
                 End If
 
-                ' Linear dim thường có IntentOne / IntentTwo
                 Try
                     Dim i1 As Object = CallByName(oDim, "IntentOne", CallType.Get)
                     Dim v1 As DrawingView = GetViewFromIntent(i1)
@@ -519,13 +623,12 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                 Catch
                 End Try
 
-                ' Không xác định được → nếu đang AllViews đã xử lý ở trên
-                ' với PickViews: bỏ qua dim không gắn view rõ
                 Return False
             Catch
                 Return False
             End Try
         End Function
+
 
         Private Function GetViewFromIntent(intentObj As Object) As DrawingView
             Try
@@ -538,7 +641,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                 End Try
                 If geom Is Nothing Then Return Nothing
 
-                ' DrawingCurve.Parent = DrawingView
                 Try
                     Dim parent As Object = CallByName(geom, "Parent", CallType.Get)
                     If TypeOf parent Is DrawingView Then
@@ -550,6 +652,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
             End Try
             Return Nothing
         End Function
+
 
         Private Function CenterDimension(oDim As DrawingDimension) As Boolean
             Try
@@ -564,11 +667,10 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
             End Try
         End Function
 
-        Private Function ArrangeDimensions(
-            invApp As Inventor.Application,
-            oSheet As Sheet,
-            dims As List(Of DrawingDimension)) As Integer
 
+        Private Function ArrangeDimensions(invApp As Inventor.Application,
+                                           oSheet As Sheet,
+                                           dims As List(Of DrawingDimension)) As Integer
             Dim count As Integer = 0
             Try
                 Dim col As ObjectCollection = invApp.TransientObjects.CreateObjectCollection()
@@ -597,12 +699,10 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
             End Try
             Return count
         End Function
-        '=====================================================
-        ' Lấy DrawingView gắn với HoleThreadNote
-        '=====================================================
+
+
         Private Function GetViewFromHoleThreadNote(htNote As HoleThreadNote) As DrawingView
             Try
-                ' Cách 1: Edge (DrawingCurve)
                 Dim linkedCurve As DrawingCurve = Nothing
                 Try
                     linkedCurve = htNote.Edge
@@ -619,7 +719,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
                     End Try
                 End If
 
-                ' Cách 2: Intent.Geometry
                 Try
                     Dim intent As GeometryIntent = htNote.Intent
                     If intent IsNot Nothing AndAlso intent.Geometry IsNot Nothing Then
@@ -638,5 +737,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdim
             End Try
             Return Nothing
         End Function
+
     End Module
+
 End Namespace

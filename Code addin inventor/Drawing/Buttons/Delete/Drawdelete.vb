@@ -3,34 +3,21 @@ Option Strict Off
 
 Imports System.Collections.Generic
 Imports System.Windows.Forms
-Imports System.Drawing
 Imports Inventor
+Imports Drw = System.Drawing
 
 Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
 
     '=====================================================
-    ' FORM CHỌN CHỨC NĂNG XÓA / ẨN
+    ' FORM CHỌN CHỨC NĂNG XÓA / ẨN — PHÂN NHÓM
     '=====================================================
     Public Class CleanupFormDelete
         Inherits Form
 
-        Private chkHideLabel As CheckBox
-        Private chkDeleteBalloon As CheckBox
-        Private chkDeleteSurface As CheckBox
-        ' Private chkDeleteDatum As CheckBox
-        Private chkDeleteFCF As CheckBox
-        Private chkDeleteHoleDim As CheckBox
-        Private chkDeleteHoleNote As CheckBox
-        Private chkDeleteTextNote As CheckBox
-        Private chkDeleteLeaderText As CheckBox
-        Private chkDeleteWelding As CheckBox
-        Private btnOK As Button
-        Private btnCancel As Button
-        Private chkDeleteSketchSymbol As CheckBox
+        '===== PROPERTIES =====
         Public ReadOnly Property HideViewLabel As Boolean
         Public ReadOnly Property DeleteBalloon As Boolean
         Public ReadOnly Property DeleteSurface As Boolean
-        '  Public ReadOnly Property DeleteDatum As Boolean
         Public ReadOnly Property DeleteFCF As Boolean
         Public ReadOnly Property DeleteHoleDim As Boolean
         Public ReadOnly Property DeleteHoleNote As Boolean
@@ -39,48 +26,132 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
         Public ReadOnly Property DeleteWelding As Boolean
         Public ReadOnly Property Cancelled As Boolean
         Public ReadOnly Property DeleteSketchSymbol As Boolean
+
+        '===== CONTROLS =====
+        Private chkHideLabel As CheckBox
+        Private chkDeleteBalloon As CheckBox
+        Private chkDeleteSurface As CheckBox
+        Private chkDeleteFCF As CheckBox
+        Private chkDeleteHoleDim As CheckBox
+        Private chkDeleteHoleNote As CheckBox
+        Private chkDeleteTextNote As CheckBox
+        Private chkDeleteLeaderText As CheckBox
+        Private chkDeleteWelding As CheckBox
+        Private chkDeleteSketchSymbol As CheckBox
+        Private chkSelectAll As CheckBox
+        Private btnOK As Button
+        Private btnCancel As Button
+
         Public Sub New()
             _Cancelled = False
 
             Me.Text = "Dọn dẹp bản vẽ"
-            Me.FormBorderStyle = FormBorderStyle.FixedDialog
+            Me.AutoScaleMode = AutoScaleMode.None
+            Me.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
+            Me.FormBorderStyle = FormBorderStyle.FixedSingle
             Me.StartPosition = FormStartPosition.CenterScreen
             Me.MaximizeBox = False
             Me.MinimizeBox = False
-            Me.ClientSize = New Size(380, 370)
+            Me.ShowInTaskbar = False
+            Me.ClientSize = New Drw.Size(660, 660)
+            Me.BackColor = Drw.Color.FromArgb(245, 245, 245)
+            Me.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
 
-            Dim lbl As New Label()
-            lbl.Text = "Chọn thao tác cần thực hiện:"
-            lbl.Location = New System.Drawing.Point(15, 12)
-            lbl.Size = New Size(360, 20)
-            lbl.Font = New Font(lbl.Font, FontStyle.Bold)
-            Me.Controls.Add(lbl)
+            '===== HEADER =====
+            Dim pnlHeader As New Panel()
+            pnlHeader.Location = New Drw.Point(0, 0)
+            pnlHeader.Size = New Drw.Size(660, 75)
+            pnlHeader.BackColor = Drw.Color.FromArgb(45, 100, 180)
+            Me.Controls.Add(pnlHeader)
 
-            chkDeleteHoleDim = MakeCheckBox("Xóa Dimension lỗ (Diameter)", 40)
-            chkDeleteHoleNote = MakeCheckBox("Xóa Hole / Thread Note", 68)
+            Dim lblTitle As New Label()
+            lblTitle.Text = "DỌN DẸP BẢN VẼ DRAWING"
+            lblTitle.Font = New Drw.Font("Segoe UI", 15.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
+            lblTitle.ForeColor = Drw.Color.White
+            lblTitle.Dock = DockStyle.Fill
+            lblTitle.TextAlign = Drw.ContentAlignment.MiddleCenter
+            pnlHeader.Controls.Add(lblTitle)
 
-            chkHideLabel = MakeCheckBox("Ẩn Label của tất cả Drawing View", 96)
-            chkDeleteBalloon = MakeCheckBox("Xóa Balloon (bong bóng đánh số)", 124)
-            chkDeleteSurface = MakeCheckBox("Xóa Surface Texture Symbol", 152)
-            ' chkDeleteDatum = MakeCheckBox("Xóa Datum Target Symbol", 180)
-            chkDeleteSketchSymbol = MakeCheckBox("Xóa Sketch Symbol (ký hiệu sketch)", 180)
-            chkDeleteFCF = MakeCheckBox("Xóa Feature Control Frame (GD&T)", 208)
-            chkDeleteTextNote = MakeCheckBox("Xóa Text Note (không leader)", 236)
-            chkDeleteLeaderText = MakeCheckBox("Xóa Leader Text (có leader)", 264)
-            chkDeleteWelding = MakeCheckBox("Xóa Welding Symbol (cần 2024+)", 292)
+            Dim lblSub As New Label()
+            lblSub.Text = "Chọn các thao tác cần thực hiện"
+            lblSub.Font = New Drw.Font("Segoe UI", 9.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            lblSub.ForeColor = Drw.Color.FromArgb(220, 230, 245)
+            lblSub.Dock = DockStyle.Bottom
+            lblSub.Height = 20
+            lblSub.TextAlign = Drw.ContentAlignment.MiddleCenter
+            pnlHeader.Controls.Add(lblSub)
 
+            '===== CHECKBOX CHỌN TẤT CẢ =====
+            chkSelectAll = New CheckBox() With {
+                .Text = "Chọn tất cả / Bỏ chọn tất cả",
+                .Location = New Drw.Point(20, 85),
+                .Size = New Drw.Size(620, 25),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(45, 100, 180)}
+            AddHandler chkSelectAll.CheckedChanged, AddressOf OnSelectAllChanged
+            Me.Controls.Add(chkSelectAll)
 
+            '===== GROUP 1: CHI TIẾT KỸ THUẬT =====
+            Dim gb1 As New GroupBox() With {
+                .Text = "Chi tiết kỹ thuật",
+                .Location = New Drw.Point(15, 120),
+                .Size = New Drw.Size(630, 130),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                .BackColor = Drw.Color.White}
+            Me.Controls.Add(gb1)
+
+            chkDeleteHoleDim = MakeCheckBox(gb1, "Xóa Dimension lỗ (Diameter)", 30)
+            chkDeleteHoleNote = MakeCheckBox(gb1, "Xóa Hole / Thread Note", 60)
+            chkDeleteFCF = MakeCheckBox(gb1, "Xóa Feature Control Frame (GD&T)", 90)
+
+            '===== GROUP 2: KÝ HIỆU =====
+            Dim gb2 As New GroupBox() With {
+                .Text = "Ký hiệu / Symbol",
+                .Location = New Drw.Point(15, 260),
+                .Size = New Drw.Size(630, 195),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                .BackColor = Drw.Color.White}
+            Me.Controls.Add(gb2)
+
+            chkDeleteBalloon = MakeCheckBox(gb2, "Xóa Balloon (bong bóng đánh số)", 30)
+            chkDeleteSurface = MakeCheckBox(gb2, "Xóa Surface Texture Symbol", 60)
+            chkDeleteSketchSymbol = MakeCheckBox(gb2, "Xóa Sketch Symbol (ký hiệu sketch)", 90)
+            chkDeleteWelding = MakeCheckBox(gb2, "Xóa Welding Symbol (cần Inventor 2024+)", 120)
+
+            '===== GROUP 3: TEXT & VIEW =====
+            Dim gb3 As New GroupBox() With {
+                .Text = "Text & View",
+                .Location = New Drw.Point(15, 465),
+                .Size = New Drw.Size(630, 130),
+                .Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
+                .ForeColor = Drw.Color.FromArgb(45, 100, 180),
+                .BackColor = Drw.Color.White}
+            Me.Controls.Add(gb3)
+
+            chkDeleteTextNote = MakeCheckBox(gb3, "Xóa Text Note (không leader)", 30)
+            chkDeleteLeaderText = MakeCheckBox(gb3, "Xóa Leader Text (có leader)", 60)
+            chkHideLabel = MakeCheckBox(gb3, "Ẩn Label của tất cả Drawing View", 90)
+
+            '===== NÚT =====
             btnOK = New Button()
-            btnOK.Text = "Thực hiện"
-            btnOK.Location = New System.Drawing.Point(170, 325)
-            btnOK.Size = New Size(85, 30)
+            btnOK.Text = "THỰC HIỆN"
+            btnOK.Location = New Drw.Point(495, 605)
+            btnOK.Size = New Drw.Size(150, 42)
+            btnOK.BackColor = Drw.Color.FromArgb(45, 100, 180)
+            btnOK.ForeColor = Drw.Color.White
+            btnOK.FlatStyle = FlatStyle.Flat
+            btnOK.Font = New Drw.Font("Segoe UI", 10.5F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point)
             btnOK.DialogResult = DialogResult.OK
             Me.Controls.Add(btnOK)
 
             btnCancel = New Button()
-            btnCancel.Text = "Hủy"
-            btnCancel.Location = New System.Drawing.Point(265, 325)
-            btnCancel.Size = New Size(85, 30)
+            btnCancel.Text = "HỦY"
+            btnCancel.Location = New Drw.Point(355, 605)
+            btnCancel.Size = New Drw.Size(130, 42)
+            btnCancel.FlatStyle = FlatStyle.Flat
+            btnCancel.Font = New Drw.Font("Segoe UI", 10.0F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
             btnCancel.DialogResult = DialogResult.Cancel
             Me.Controls.Add(btnCancel)
 
@@ -88,15 +159,46 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
             Me.CancelButton = btnCancel
         End Sub
 
-        Private Function MakeCheckBox(ByVal text As String, ByVal top As Integer) As CheckBox
+
+        '=========================================================
+        ' TẠO CHECKBOX
+        '=========================================================
+        Private Function MakeCheckBox(ByVal parent As GroupBox,
+                                      ByVal text As String,
+                                      ByVal top As Integer) As CheckBox
             Dim chk As New CheckBox()
             chk.Text = text
-            chk.Location = New System.Drawing.Point(20, top)
-            chk.Size = New Size(360, 22)
-            Me.Controls.Add(chk)
+            chk.Location = New Drw.Point(20, top)
+            chk.Size = New Drw.Size(590, 25)
+            chk.Font = New Drw.Font("Segoe UI", 9.5F, Drw.FontStyle.Regular, Drw.GraphicsUnit.Point)
+            chk.ForeColor = Drw.Color.FromArgb(40, 40, 40)
+            parent.Controls.Add(chk)
             Return chk
         End Function
 
+
+        '=========================================================
+        ' CHỌN / BỎ CHỌN TẤT CẢ
+        '=========================================================
+        Private Sub OnSelectAllChanged(ByVal sender As Object, ByVal e As EventArgs)
+            Dim chk As Boolean = chkSelectAll.Checked
+
+            chkDeleteHoleDim.Checked = chk
+            chkDeleteHoleNote.Checked = chk
+            chkDeleteFCF.Checked = chk
+            chkDeleteBalloon.Checked = chk
+            chkDeleteSurface.Checked = chk
+            chkDeleteSketchSymbol.Checked = chk
+            chkDeleteWelding.Checked = chk
+            chkDeleteTextNote.Checked = chk
+            chkDeleteLeaderText.Checked = chk
+            chkHideLabel.Checked = chk
+        End Sub
+
+
+        '=========================================================
+        ' SHOW VÀ LẤY KẾT QUẢ
+        '=========================================================
         Public Function ShowAndGet() As Boolean
             Dim result As DialogResult = Me.ShowDialog()
             If result <> DialogResult.OK Then
@@ -107,7 +209,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
             _HideViewLabel = chkHideLabel.Checked
             _DeleteBalloon = chkDeleteBalloon.Checked
             _DeleteSurface = chkDeleteSurface.Checked
-            '_DeleteDatum = chkDeleteDatum.Checked
             _DeleteSketchSymbol = chkDeleteSketchSymbol.Checked
             _DeleteFCF = chkDeleteFCF.Checked
             _DeleteHoleDim = chkDeleteHoleDim.Checked
@@ -118,26 +219,14 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
             Return True
         End Function
 
-        Private Sub InitializeComponent()
-            Me.SuspendLayout()
-            '
-            'CleanupFormDelete
-            '
-            Me.ClientSize = New System.Drawing.Size(282, 253)
-            Me.Name = "CleanupFormDelete"
-            Me.ResumeLayout(False)
-
-        End Sub
-
-        Private Sub CleanupFormDelete_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-
-        End Sub
     End Class
 
+
     '=====================================================
-    ' MODULE CHÍNH
+    ' MODULE CHÍNH — GIỮ NGUYÊN 100%
     '=====================================================
     Public Module Draw_delete
+
         Public Sub OnExecute(ByVal Context As NameValueMap)
             Try
                 Dim invApp As Inventor.Application = g_inventorApplication
@@ -163,9 +252,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
                 Dim nLabel As Integer = 0
                 Dim nBalloon As Integer = 0
                 Dim nSurface As Integer = 0
-                ' Dim nDatum As Integer = 0
                 Dim nSketchSymbol As Integer = 0
-                ' (xóa Dim nDatum)
                 Dim nFCF As Integer = 0
                 Dim nHoleDim As Integer = 0
                 Dim nHoleNote As Integer = 0
@@ -231,26 +318,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
                 End If
 
                 '=====================================================
-                ' 4. DATUM TARGET
-                '=====================================================
-                '  If form.DeleteDatum Then
-                ' Try
-                ' Dim toDel As New List(Of DatumTarget)
-                'For Each d As DatumTarget In oSheet.DatumTargets.ToString
-                ' toDel.Add(d)
-                'Next
-                '  For Each d As DatumTarget In toDel
-                '   Try
-                'd.Delete()
-                '        nDatum += 1
-                'Catch
-                '           nFail += 1
-                'End Try
-                '   Next
-                'Catch
-                'End Try
-                '    End If
-                '=====================================================
                 ' 4. SKETCH SYMBOL
                 '=====================================================
                 If form.DeleteSketchSymbol Then
@@ -271,6 +338,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
                         nFail += 1
                     End Try
                 End If
+
                 '=====================================================
                 ' 5. FEATURE CONTROL FRAME
                 '=====================================================
@@ -326,7 +394,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
                 End If
 
                 '=====================================================
-                ' 7. XÓA DIAMETER DIMENSION CỦA LỖ
+                ' 7. DIAMETER DIMENSION
                 '=====================================================
                 If form.DeleteHoleDim Then
                     Try
@@ -352,9 +420,8 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
                 End If
 
                 '=====================================================
-                ' 8. XÓA HOLE / THREAD NOTE
+                ' 8. HOLE / THREAD NOTE
                 '=====================================================
-
                 If form.DeleteHoleNote Then
                     Try
                         Dim toDel As New List(Of HoleThreadNote)
@@ -380,7 +447,6 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
                     Dim toDelNotes As New List(Of DrawingNote)
                     For Each oNote As DrawingNote In oSheet.DrawingNotes
                         Try
-                            ' Bỏ qua HoleThreadNote (đã xử lý ở bước 8)
                             If TypeOf oNote Is HoleThreadNote Then Continue For
 
                             Dim hasLeader As Boolean = False
@@ -426,7 +492,7 @@ Namespace ToolInventor2025.Drawing.Buttons.Drawdelete
                     "Ẩn Label view: " & nLabel & vbCrLf &
                     "Xóa Balloon: " & nBalloon & vbCrLf &
                     "Xóa Surface: " & nSurface & vbCrLf &
-                  "Xóa Sketch Symbol: " & nSketchSymbol & vbCrLf &                  '  "Xóa Datum: " & nDatum & vbCrLf &
+                    "Xóa Sketch Symbol: " & nSketchSymbol & vbCrLf &
                     "Xóa Feature Control Frame: " & nFCF & vbCrLf &
                     "Xóa Welding: " & nWelding & vbCrLf &
                     "Xóa Dimension lỗ: " & nHoleDim & vbCrLf &
