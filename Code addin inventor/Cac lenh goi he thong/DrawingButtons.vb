@@ -232,8 +232,8 @@ Namespace ToolInventor2025
 
             buttonsList.Add(DrawingBtn19)
 
-            Dim DrawingBtn20 As ButtonDefinition = controlDefs.AddButtonDefinition("Drawing_TitleBlock_Border", "ToolInventor2025_Drawing_Btn20", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
-                                                                                   "Thay thế văn bản", Dra1SmallIcon20, Dra1LargeIcon20)
+            Dim DrawingBtn20 As ButtonDefinition = controlDefs.AddButtonDefinition("Thay khung tên, Border", "ToolInventor2025_Drawing_Btn20", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                                                                                   "Thay thế khung tên, Border", Dra1SmallIcon20, Dra1LargeIcon20)
             AddHandler DrawingBtn20.OnExecute, AddressOf Drawing.Buttons.DrawSheet.Drawing_TitleBlock_Border.OnExecute
 
             buttonsList.Add(DrawingBtn20)

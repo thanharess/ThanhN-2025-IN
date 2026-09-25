@@ -1,6 +1,7 @@
 ﻿Imports System.Windows.Forms
 Imports System.Collections.Generic
 Imports Inventor
+Imports Drw = System.Drawing
 
 Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
 
@@ -37,10 +38,10 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             End Try
         End Sub
 
+
         ' =====================================================
         ' API CÔNG KHAI — FORM GỌI
         ' =====================================================
-
         Public Function GetTitleBlockNames() As List(Of String)
             Dim result As New List(Of String)
             Try
@@ -73,7 +74,10 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Return result
         End Function
 
-        ' --- XÓA ---
+
+        ' =====================================================
+        ' XÓA
+        ' =====================================================
         Public Sub DeleteAllTitleBlocks()
             RunDelete("Xóa Title Block — tất cả sheet", "ALL", True)
         End Sub
@@ -93,7 +97,10 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             RunDelete("Xóa Border — sheet chọn", "SELECTED", False)
         End Sub
 
-        ' --- THAY ---
+
+        ' =====================================================
+        ' THAY
+        ' =====================================================
         Public Sub ReplaceAllTitleBlocks(tbName As String)
             RunReplace("Thay Title Block — tất cả sheet", "ALL", tbName, Nothing)
         End Sub
@@ -113,7 +120,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             RunReplace("Thay Border — sheet chọn", "SELECTED", Nothing, bdName)
         End Sub
 
-        ' --- THAY CẢ 2 ---
         Public Sub ReplaceBothAllSheets(tbName As String, bdName As String)
             RunReplace("Thay TB + Border — tất cả sheet", "ALL", tbName, bdName)
         End Sub
@@ -124,162 +130,509 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             RunReplace("Thay TB + Border — sheet chọn", "SELECTED", tbName, bdName)
         End Sub
 
+
         ' =====================================================
         ' HÀM LÕI — XÓA
         ' =====================================================
         Private Sub RunDelete(title As String, scope As String, isTB As Boolean)
+
             Dim invApp As Inventor.Application = Nothing
             Dim drawDoc As Inventor.DrawingDocument = Nothing
             If Not ValidateDrawing(invApp, drawDoc, title) Then Return
 
             Dim count As Integer = 0
+            Dim skip As Integer = 0
+            Dim fail As Integer = 0
 
             invApp.SilentOperation = True
             Try
                 Select Case scope
                     Case "ALL"
                         For Each oSheet As Inventor.Sheet In drawDoc.Sheets
-                            If DeleteOnSheet(oSheet, isTB) Then count += 1
+                            Dim r = DeleteOnSheet(oSheet, isTB)
+                            If r = 1 Then count += 1
+                            If r = 0 Then skip += 1
+                            If r = -1 Then fail += 1
                         Next
                     Case "ACTIVE"
                         Dim s As Inventor.Sheet = drawDoc.ActiveSheet
-                        If s IsNot Nothing AndAlso DeleteOnSheet(s, isTB) Then count += 1
+                        If s IsNot Nothing Then
+                            Dim r = DeleteOnSheet(s, isTB)
+                            If r = 1 Then count += 1
+                            If r = 0 Then skip += 1
+                            If r = -1 Then fail += 1
+                        End If
                     Case "SELECTED"
                         Dim s As Inventor.Sheet = PickSheet(drawDoc, title)
-                        If s IsNot Nothing AndAlso DeleteOnSheet(s, isTB) Then count += 1
+                        If s IsNot Nothing Then
+                            Dim r = DeleteOnSheet(s, isTB)
+                            If r = 1 Then count += 1
+                            If r = 0 Then skip += 1
+                            If r = -1 Then fail += 1
+                        End If
                 End Select
             Catch
             End Try
             invApp.SilentOperation = False
 
-            drawDoc.Update2(True)
-            MessageBox.Show("Đã xử lý " & count & " sheet.", title)
+            Try : drawDoc.Update2(True) : Catch : End Try
+
+            Dim msg As String =
+                "Đã xóa: " & count.ToString() & vbCrLf
+            If skip > 0 Then msg &= "Bỏ qua (không có): " & skip.ToString() & vbCrLf
+            If fail > 0 Then msg &= "Lỗi: " & fail.ToString()
+
+            MessageBox.Show(msg, title)
         End Sub
 
-        Private Function DeleteOnSheet(oSheet As Inventor.Sheet, isTB As Boolean) As Boolean
+
+        ''' <summary>
+        ''' 1 = đã xóa | 0 = không có gì để xóa | -1 = lỗi
+        ''' </summary>
+        Private Function DeleteOnSheet(oSheet As Inventor.Sheet, isTB As Boolean) As Integer
             Try
                 If isTB Then
                     If oSheet.TitleBlock IsNot Nothing Then
                         oSheet.TitleBlock.Delete()
-                        Return True
+                        Return 1
+                    Else
+                        Return 0
                     End If
                 Else
                     If oSheet.Border IsNot Nothing Then
                         oSheet.Border.Delete()
-                        Return True
+                        Return 1
+                    Else
+                        Return 0
                     End If
                 End If
             Catch
+                Return -1
             End Try
-            Return False
         End Function
 
+
         ' =====================================================
-        ' HÀM LÕI — THAY (đã fix activate từng sheet)
+        ' HÀM LÕI — THAY
         ' =====================================================
-        Private Sub RunReplace(title As String, scope As String, tbName As String, bdName As String)
+        Private Sub RunReplace(title As String,
+                               scope As String,
+                               tbName As String,
+                               bdName As String)
+
             Dim invApp As Inventor.Application = Nothing
             Dim drawDoc As Inventor.DrawingDocument = Nothing
             If Not ValidateDrawing(invApp, drawDoc, title) Then Return
 
-            Dim cntTB As Integer = 0
-            Dim cntBD As Integer = 0
+            '=================================================
+            ' ⭐ KIỂM TRA DEFINITION TRƯỚC KHI CHẠY
+            '=================================================
+            Dim tbDef As Inventor.TitleBlockDefinition = Nothing
+            Dim bdDef As Inventor.BorderDefinition = Nothing
+
+            If tbName IsNot Nothing Then
+                If Not TryGetTitleBlockDef(drawDoc, tbName, tbDef) Then
+                    MessageBox.Show("Không tìm thấy Title Block mẫu: '" & tbName & "'" & vbCrLf & vbCrLf &
+                                    "Có thể mẫu này chưa được load vào file." & vbCrLf &
+                                    "Mở Sheet Format → chọn mẫu → OK, rồi chạy lại.",
+                                    title, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    Return
+                End If
+            End If
+
+            If bdName IsNot Nothing Then
+                If Not TryGetBorderDef(drawDoc, bdName, bdDef) Then
+                    MessageBox.Show("Không tìm thấy Border mẫu: '" & bdName & "'" & vbCrLf & vbCrLf &
+                                    "Có thể mẫu này chưa được load vào file." & vbCrLf &
+                                    "Mở Sheet Format → chọn mẫu → OK, rồi chạy lại.",
+                                    title, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    Return
+                End If
+            End If
+
+            '=================================================
+            ' THU THẬP SHEET ĐÍCH
+            '=================================================
+            Dim targetSheets As New List(Of Inventor.Sheet)
+
+            Select Case scope
+                Case "ALL"
+                    For Each s As Inventor.Sheet In drawDoc.Sheets
+                        targetSheets.Add(s)
+                    Next
+
+                Case "ACTIVE"
+                    Dim s As Inventor.Sheet = drawDoc.ActiveSheet
+                    If s IsNot Nothing Then targetSheets.Add(s)
+
+                Case "SELECTED"
+                    Dim s As Inventor.Sheet = PickSheet(drawDoc, title)
+                    If s IsNot Nothing Then targetSheets.Add(s)
+            End Select
+
+            If targetSheets.Count = 0 Then
+                MessageBox.Show("Không có sheet nào để xử lý.", title)
+                Return
+            End If
+
+            '=================================================
+            ' XỬ LÝ
+            '=================================================
             Dim originalSheet As Inventor.Sheet = drawDoc.ActiveSheet
+            Dim result As New List(Of SheetResult)
 
             invApp.SilentOperation = True
             Try
-                Select Case scope
-                    Case "ALL"
-                        For Each oSheet As Inventor.Sheet In drawDoc.Sheets
-                            ' ✅ Activate sheet trước khi thay
-                            Try : oSheet.Activate() : Catch : End Try
-                            Try : drawDoc.Update() : Catch : End Try
+                For Each oSheet As Inventor.Sheet In targetSheets
 
-                            If tbName IsNot Nothing AndAlso ReplaceTBOnSheet(oSheet, tbName) Then cntTB += 1
-                            If bdName IsNot Nothing AndAlso ReplaceBDOnSheet(oSheet, bdName) Then cntBD += 1
-                        Next
+                    ' ⭐ Activate sheet trước khi thao tác (BẮT BUỘC cho Inventor 2025)
+                    Try : oSheet.Activate() : Catch : End Try
+                    Try : drawDoc.Update() : Catch : End Try
 
-                    Case "ACTIVE"
-                        Dim s As Inventor.Sheet = drawDoc.ActiveSheet
-                        If s IsNot Nothing Then
-                            Try : s.Activate() : Catch : End Try
-                            Try : drawDoc.Update() : Catch : End Try
-                            If tbName IsNot Nothing AndAlso ReplaceTBOnSheet(s, tbName) Then cntTB += 1
-                            If bdName IsNot Nothing AndAlso ReplaceBDOnSheet(s, bdName) Then cntBD += 1
-                        End If
+                    Dim r As New SheetResult() With {
+                        .SheetName = oSheet.Name
+                    }
 
-                    Case "SELECTED"
-                        Dim s As Inventor.Sheet = PickSheet(drawDoc, title)
-                        If s IsNot Nothing Then
-                            Try : s.Activate() : Catch : End Try
-                            Try : drawDoc.Update() : Catch : End Try
-                            If tbName IsNot Nothing AndAlso ReplaceTBOnSheet(s, tbName) Then cntTB += 1
-                            If bdName IsNot Nothing AndAlso ReplaceBDOnSheet(s, bdName) Then cntBD += 1
-                        End If
-                End Select
+                    '=============================================
+                    ' TITLE BLOCK
+                    '=============================================
+                    If tbName IsNot Nothing Then
+                        Dim r2 = ReplaceTBOnSheet_Ex(oSheet, tbDef, tbName)
+                        r.TB_Status = r2
+                    End If
+
+                    '=============================================
+                    ' BORDER — có kiểm tra riêng
+                    '=============================================
+                    If bdName IsNot Nothing Then
+                        Dim r3 = ReplaceBDOnSheet_Ex(oSheet, bdDef, bdName)
+                        r.BD_Status = r3
+                    End If
+
+                    result.Add(r)
+                Next
             Catch
             End Try
 
-            ' ✅ Restore sheet ban đầu
+            ' Restore sheet ban đầu
             Try
                 If originalSheet IsNot Nothing Then originalSheet.Activate()
             Catch
             End Try
 
             invApp.SilentOperation = False
-            drawDoc.Update2(True)
+            Try : drawDoc.Update2(True) : Catch : End Try
 
-            Dim msg As String = ""
-            If tbName IsNot Nothing Then msg &= "Title Block: " & cntTB & " / " & drawDoc.Sheets.Count & vbCrLf
-            If bdName IsNot Nothing Then msg &= "Border: " & cntBD & " / " & drawDoc.Sheets.Count
-            MessageBox.Show("Đã thay thành công:" & vbCrLf & msg, title)
+            '=================================================
+            ' BÁO CÁO KẾT QUẢ
+            '=================================================
+            Dim msg As New System.Text.StringBuilder()
+            msg.AppendLine("Kết quả xử lý " & result.Count & " sheet:")
+            msg.AppendLine()
+
+            Dim cntTB_OK As Integer = 0
+            Dim cntTB_Skip As Integer = 0
+            Dim cntTB_Fail As Integer = 0
+            Dim cntBD_OK As Integer = 0
+            Dim cntBD_Skip As Integer = 0
+            Dim cntBD_Fail As Integer = 0
+
+            For Each r In result
+                If tbName IsNot Nothing Then
+                    If r.TB_Status = ReplaceStatus.Success Then cntTB_OK += 1
+                    If r.TB_Status = ReplaceStatus.Skipped Then cntTB_Skip += 1
+                    If r.TB_Status = ReplaceStatus.Failed Then cntTB_Fail += 1
+                End If
+
+                If bdName IsNot Nothing Then
+                    If r.BD_Status = ReplaceStatus.Success Then cntBD_OK += 1
+                    If r.BD_Status = ReplaceStatus.Skipped Then cntBD_Skip += 1
+                    If r.BD_Status = ReplaceStatus.Failed Then cntBD_Fail += 1
+                End If
+            Next
+
+            If tbName IsNot Nothing Then
+                msg.AppendLine("── TITLE BLOCK ──")
+                msg.AppendLine("  ✔ Thay OK   : " & cntTB_OK.ToString())
+                If cntTB_Skip > 0 Then msg.AppendLine("  ⊘ Bỏ qua    : " & cntTB_Skip.ToString())
+                If cntTB_Fail > 0 Then msg.AppendLine("  ✘ Lỗi       : " & cntTB_Fail.ToString())
+                msg.AppendLine()
+            End If
+
+            If bdName IsNot Nothing Then
+                msg.AppendLine("── BORDER ──")
+                msg.AppendLine("  ✔ Thay OK   : " & cntBD_OK.ToString())
+                If cntBD_Skip > 0 Then msg.AppendLine("  ⊘ Bỏ qua    : " & cntBD_Skip.ToString())
+                If cntBD_Fail > 0 Then msg.AppendLine("  ✘ Lỗi       : " & cntBD_Fail.ToString())
+            End If
+
+            If cntTB_Fail > 0 OrElse cntBD_Fail > 0 Then
+                msg.AppendLine()
+                msg.AppendLine("⚠ Có sheet lỗi. Chi tiết:")
+                For Each r In result
+                    If r.TB_Status = ReplaceStatus.Failed OrElse r.BD_Status = ReplaceStatus.Failed Then
+                        msg.AppendLine("  • " & r.SheetName)
+                    End If
+                Next
+            End If
+
+            MessageBox.Show(msg.ToString(), title,
+                            MessageBoxButtons.OK,
+                            If(cntTB_Fail > 0 OrElse cntBD_Fail > 0,
+                               MessageBoxIcon.Warning,
+                               MessageBoxIcon.Information))
         End Sub
 
-        Private Function ReplaceTBOnSheet(oSheet As Inventor.Sheet, tbName As String) As Boolean
+
+        ' =====================================================
+        ' TRẠNG THÁI KẾT QUẢ
+        ' =====================================================
+        Private Enum ReplaceStatus
+            NotApplied = 0
+            Success = 1
+            Skipped = 2
+            Failed = -1
+        End Enum
+
+        Private Class SheetResult
+            Public SheetName As String = ""
+            Public TB_Status As ReplaceStatus = ReplaceStatus.NotApplied
+            Public BD_Status As ReplaceStatus = ReplaceStatus.NotApplied
+        End Class
+
+
+        ' =====================================================
+        ' THAY TITLE BLOCK — CÓ KIỂM TRA
+        ' =====================================================
+        Private Function ReplaceTBOnSheet_Ex(oSheet As Inventor.Sheet,
+                                             tbDef As Inventor.TitleBlockDefinition,
+                                             tbName As String) As ReplaceStatus
             Try
                 Dim drawDoc As Inventor.DrawingDocument = oSheet.Parent
-                Dim def As Inventor.TitleBlockDefinition = Nothing
-                Try
-                    def = drawDoc.TitleBlockDefinitions.Item(tbName)
-                Catch
-                    Return False
-                End Try
 
-                If oSheet.TitleBlock IsNot Nothing Then
-                    oSheet.TitleBlock.Delete()
-                    Try : drawDoc.Update() : Catch : End Try
+                '=============================================
+                ' KIỂM TRA: Đã có Title Block chưa
+                '=============================================
+                Dim hadOld As Boolean = (oSheet.TitleBlock IsNot Nothing)
+
+                '=============================================
+                ' KIỂM TRA: Title Block hiện tại có phải là mẫu cần thay không?
+                ' Nếu trùng tên → bỏ qua
+                '=============================================
+                If hadOld Then
+                    Try
+                        Dim oldName As String = oSheet.TitleBlock.Definition.Name
+                        If String.Equals(oldName, tbName, StringComparison.OrdinalIgnoreCase) Then
+                            Return ReplaceStatus.Skipped
+                        End If
+                    Catch
+                    End Try
                 End If
 
-                oSheet.AddTitleBlock(def)
-                Try : drawDoc.Update() : Catch : End Try
-                Return True
+                '=============================================
+                ' XÓA CŨ
+                '=============================================
+                If hadOld Then
+                    Try
+                        oSheet.TitleBlock.Delete()
+                        Try : drawDoc.Update() : Catch : End Try
+                    Catch
+                        Return ReplaceStatus.Failed
+                    End Try
+                End If
+
+                '=============================================
+                ' THÊM MỚI
+                '=============================================
+                Try
+                    oSheet.AddTitleBlock(tbDef)
+                    Try : drawDoc.Update() : Catch : End Try
+                Catch
+                    Return ReplaceStatus.Failed
+                End Try
+
+                '=============================================
+                ' ⭐ VERIFY: Kiểm tra đã add thành công
+                '=============================================
+                Try
+                    If oSheet.TitleBlock Is Nothing Then
+                        Return ReplaceStatus.Failed
+                    End If
+
+                    ' Kiểm tra tên definition khớp
+                    Dim newName As String = ""
+                    Try : newName = oSheet.TitleBlock.Definition.Name : Catch : End Try
+
+                    If Not String.IsNullOrEmpty(newName) AndAlso
+                       Not String.Equals(newName, tbName, StringComparison.OrdinalIgnoreCase) Then
+                        Return ReplaceStatus.Failed
+                    End If
+                Catch
+                End Try
+
+                Return ReplaceStatus.Success
+
             Catch
-                Return False
+                Return ReplaceStatus.Failed
             End Try
         End Function
 
-        Private Function ReplaceBDOnSheet(oSheet As Inventor.Sheet, bdName As String) As Boolean
+
+        ' =====================================================
+        ' ⭐ THAY BORDER — KIỂM TRA CHI TIẾT
+        ' =====================================================
+        Private Function ReplaceBDOnSheet_Ex(oSheet As Inventor.Sheet,
+                                             bdDef As Inventor.BorderDefinition,
+                                             bdName As String) As ReplaceStatus
             Try
                 Dim drawDoc As Inventor.DrawingDocument = oSheet.Parent
-                Dim def As Inventor.BorderDefinition = Nothing
+
+                '=============================================
+                ' KIỂM TRA 1: Border definition hợp lệ
+                '=============================================
+                If bdDef Is Nothing Then Return ReplaceStatus.Failed
+
+                '=============================================
+                ' KIỂM TRA 2: Sheet có tồn tại Border cũ không
+                '=============================================
+                Dim oldBorder As Inventor.Border = Nothing
+                Dim hadOld As Boolean = False
+
                 Try
-                    def = drawDoc.BorderDefinitions.Item(bdName)
+                    oldBorder = oSheet.Border
+                    hadOld = (oldBorder IsNot Nothing)
                 Catch
-                    Return False
+                    hadOld = False
                 End Try
 
-                If oSheet.Border IsNot Nothing Then
-                    oSheet.Border.Delete()
-                    Try : drawDoc.Update() : Catch : End Try
+                '=============================================
+                ' KIỂM TRA 3: Border cũ có trùng tên mẫu mới không?
+                ' Nếu trùng → bỏ qua, không làm gì
+                '=============================================
+                If hadOld AndAlso oldBorder IsNot Nothing Then
+                    Try
+                        Dim oldName As String = oldBorder.Definition.Name
+                        If String.Equals(oldName, bdName, StringComparison.OrdinalIgnoreCase) Then
+                            Return ReplaceStatus.Skipped
+                        End If
+                    Catch
+                    End Try
                 End If
 
-                oSheet.AddBorder(def)
-                Try : drawDoc.Update() : Catch : End Try
-                Return True
+                '=============================================
+                ' KIỂM TRA 4: Border cũ có bị khóa không? (nếu API hỗ trợ)
+                '=============================================
+                If hadOld AndAlso oldBorder IsNot Nothing Then
+                    Try
+                        ' Kiểm tra quyền xóa — một số Border bị khóa bởi Sheet Format
+                        ' Nếu không xóa được → return Failed
+                        oldBorder.Delete()
+                        Try : drawDoc.Update() : Catch : End Try
+                    Catch
+                        ' Không xóa được Border cũ
+                        Return ReplaceStatus.Failed
+                    End Try
+                End If
+
+                '=============================================
+                ' THÊM BORDER MỚI
+                '=============================================
+                Try
+                    oSheet.AddBorder(bdDef)
+                    Try : drawDoc.Update() : Catch : End Try
+                Catch
+                    Return ReplaceStatus.Failed
+                End Try
+
+                '=============================================
+                ' ⭐ VERIFY 1: Kiểm tra đã có Border sau khi add
+                '=============================================
+                Dim newBorder As Inventor.Border = Nothing
+                Try
+                    newBorder = oSheet.Border
+                    If newBorder Is Nothing Then
+                        Return ReplaceStatus.Failed
+                    End If
+                Catch
+                    Return ReplaceStatus.Failed
+                End Try
+
+                '=============================================
+                ' ⭐ VERIFY 2: Kiểm tra tên definition của Border mới
+                '=============================================
+                Try
+                    Dim newName As String = newBorder.Definition.Name
+                    If Not String.IsNullOrEmpty(newName) AndAlso
+                       Not String.Equals(newName, bdName, StringComparison.OrdinalIgnoreCase) Then
+                        Return ReplaceStatus.Failed
+                    End If
+                Catch
+                End Try
+
+                '=============================================
+                ' ⭐ VERIFY 3: Kiểm tra Border mới có khác Border cũ
+                '    (nếu Border mới giống hệt Border cũ → có thể là lỗi)
+                '=============================================
+                If hadOld AndAlso oldBorder IsNot Nothing Then
+                    Try
+                        Dim oldName As String = oldBorder.Definition.Name
+                        If String.Equals(oldName, bdName, StringComparison.OrdinalIgnoreCase) Then
+                            ' Đã xử lý ở bước trên
+                            Return ReplaceStatus.Skipped
+                        End If
+                    Catch
+                    End Try
+                End If
+
+                Return ReplaceStatus.Success
+
             Catch
-                Return False
+                Return ReplaceStatus.Failed
             End Try
         End Function
+
+
+        ' =====================================================
+        ' TÌM DEFINITION AN TOÀN
+        ' =====================================================
+        Private Function TryGetTitleBlockDef(drawDoc As Inventor.DrawingDocument,
+                                             tbName As String,
+                                             ByRef tbDef As Inventor.TitleBlockDefinition) As Boolean
+            tbDef = Nothing
+            Try
+                For Each d As Inventor.TitleBlockDefinition In drawDoc.TitleBlockDefinitions
+                    Try
+                        If String.Equals(d.Name, tbName, StringComparison.OrdinalIgnoreCase) Then
+                            tbDef = d
+                            Return True
+                        End If
+                    Catch
+                    End Try
+                Next
+            Catch
+            End Try
+            Return False
+        End Function
+
+        Private Function TryGetBorderDef(drawDoc As Inventor.DrawingDocument,
+                                         bdName As String,
+                                         ByRef bdDef As Inventor.BorderDefinition) As Boolean
+            bdDef = Nothing
+            Try
+                For Each d As Inventor.BorderDefinition In drawDoc.BorderDefinitions
+                    Try
+                        If String.Equals(d.Name, bdName, StringComparison.OrdinalIgnoreCase) Then
+                            bdDef = d
+                            Return True
+                        End If
+                    Catch
+                    End Try
+                Next
+            Catch
+            End Try
+            Return False
+        End Function
+
 
         ' =====================================================
         ' CHỌN SHEET
@@ -305,15 +658,17 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
         Private Function ChooseSheetDialog(names As List(Of String), title As String) As String
             Dim frm As New System.Windows.Forms.Form()
             frm.Text = title
-            frm.ClientSize = New System.Drawing.Size(340, 300)
+            frm.ClientSize = New Drw.Size(340, 320)
             frm.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
             frm.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
             frm.MaximizeBox = False
             frm.MinimizeBox = False
+            frm.Font = New Drw.Font("Segoe UI", 9.5F)
 
             Dim lst As New System.Windows.Forms.ListBox With {
-                .Location = New System.Drawing.Point(15, 15),
-                .Size = New System.Drawing.Size(310, 220)
+                .Location = New Drw.Point(15, 15),
+                .Size = New Drw.Size(310, 240),
+                .Font = New Drw.Font("Segoe UI", 10.0F)
             }
             For Each s In names
                 lst.Items.Add(s)
@@ -322,14 +677,14 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
 
             Dim btnOK As New System.Windows.Forms.Button With {
                 .Text = "OK",
-                .Location = New System.Drawing.Point(150, 250),
-                .Size = New System.Drawing.Size(80, 30),
+                .Location = New Drw.Point(150, 270),
+                .Size = New Drw.Size(80, 30),
                 .DialogResult = System.Windows.Forms.DialogResult.OK
             }
             Dim btnCancel As New System.Windows.Forms.Button With {
                 .Text = "Cancel",
-                .Location = New System.Drawing.Point(245, 250),
-                .Size = New System.Drawing.Size(80, 30),
+                .Location = New Drw.Point(245, 270),
+                .Size = New Drw.Size(80, 30),
                 .DialogResult = System.Windows.Forms.DialogResult.Cancel
             }
 
@@ -344,6 +699,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             End If
             Return ""
         End Function
+
 
         ' =====================================================
         ' HELPERS
@@ -376,7 +732,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
 
 
     ' ============================================================
-    ' FORM — Chọn phạm vi + hành động + mẫu TB/Border
+    ' FORM
     ' ============================================================
     Public Class Form_ChooseAction
         Inherits System.Windows.Forms.Form
@@ -408,29 +764,28 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
             Me.MaximizeBox = False
             Me.MinimizeBox = False
-            Me.Font = New System.Drawing.Font("Segoe UI", 9)
-            Me.ClientSize = New System.Drawing.Size(420, 560)
+            Me.Font = New Drw.Font("Segoe UI", 9)
+            Me.ClientSize = New Drw.Size(420, 560)
 
-            ' ============ GROUP 1: PHẠM VI ============
             Dim grpScope As New System.Windows.Forms.GroupBox With {
                 .Text = "Phạm vi áp dụng",
-                .Location = New System.Drawing.Point(15, 15),
-                .Size = New System.Drawing.Size(390, 120)
+                .Location = New Drw.Point(15, 15),
+                .Size = New Drw.Size(390, 120)
             }
             _rdoAll = New System.Windows.Forms.RadioButton With {
                 .Text = "Tất cả sheet",
-                .Location = New System.Drawing.Point(15, 25),
+                .Location = New Drw.Point(15, 25),
                 .AutoSize = True,
                 .Checked = True
             }
             _rdoActive = New System.Windows.Forms.RadioButton With {
                 .Text = "Sheet đang xem",
-                .Location = New System.Drawing.Point(15, 50),
+                .Location = New Drw.Point(15, 50),
                 .AutoSize = True
             }
             _rdoSelected = New System.Windows.Forms.RadioButton With {
                 .Text = "Tự chọn sheet (hiện hộp thoại)",
-                .Location = New System.Drawing.Point(15, 75),
+                .Location = New Drw.Point(15, 75),
                 .AutoSize = True
             }
             grpScope.Controls.Add(_rdoAll)
@@ -438,36 +793,35 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             grpScope.Controls.Add(_rdoSelected)
             Me.Controls.Add(grpScope)
 
-            ' ============ GROUP 2: HÀNH ĐỘNG ============
             Dim grpAction As New System.Windows.Forms.GroupBox With {
                 .Text = "Hành động",
-                .Location = New System.Drawing.Point(15, 145),
-                .Size = New System.Drawing.Size(390, 185)
+                .Location = New Drw.Point(15, 145),
+                .Size = New Drw.Size(390, 185)
             }
             _rdoDelTB = New System.Windows.Forms.RadioButton With {
                 .Text = "Xóa Title Block",
-                .Location = New System.Drawing.Point(15, 25),
+                .Location = New Drw.Point(15, 25),
                 .AutoSize = True,
                 .Checked = True
             }
             _rdoDelBD = New System.Windows.Forms.RadioButton With {
                 .Text = "Xóa Border",
-                .Location = New System.Drawing.Point(15, 50),
+                .Location = New Drw.Point(15, 50),
                 .AutoSize = True
             }
             _rdoRepTB = New System.Windows.Forms.RadioButton With {
                 .Text = "Thay Title Block",
-                .Location = New System.Drawing.Point(15, 75),
+                .Location = New Drw.Point(15, 75),
                 .AutoSize = True
             }
             _rdoRepBD = New System.Windows.Forms.RadioButton With {
                 .Text = "Thay Border",
-                .Location = New System.Drawing.Point(15, 100),
+                .Location = New Drw.Point(15, 100),
                 .AutoSize = True
             }
             _rdoRepBoth = New System.Windows.Forms.RadioButton With {
                 .Text = "Thay cả Title Block + Border",
-                .Location = New System.Drawing.Point(15, 125),
+                .Location = New Drw.Point(15, 125),
                 .AutoSize = True
             }
 
@@ -484,30 +838,29 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             grpAction.Controls.Add(_rdoRepBoth)
             Me.Controls.Add(grpAction)
 
-            ' ============ GROUP 3: CHỌN MẪU ============
             Dim grpDef As New System.Windows.Forms.GroupBox With {
                 .Text = "Chọn mẫu có trong file",
-                .Location = New System.Drawing.Point(15, 340),
-                .Size = New System.Drawing.Size(390, 130)
+                .Location = New Drw.Point(15, 340),
+                .Size = New Drw.Size(390, 130)
             }
             _lblTB = New System.Windows.Forms.Label With {
                 .Text = "Title Block:",
-                .Location = New System.Drawing.Point(15, 30),
+                .Location = New Drw.Point(15, 30),
                 .AutoSize = True
             }
             _cboTitleBlock = New System.Windows.Forms.ComboBox With {
-                .Location = New System.Drawing.Point(110, 27),
-                .Size = New System.Drawing.Size(260, 24),
+                .Location = New Drw.Point(110, 27),
+                .Size = New Drw.Size(260, 24),
                 .DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
             }
             _lblBD = New System.Windows.Forms.Label With {
                 .Text = "Border:",
-                .Location = New System.Drawing.Point(15, 70),
+                .Location = New Drw.Point(15, 70),
                 .AutoSize = True
             }
             _cboBorder = New System.Windows.Forms.ComboBox With {
-                .Location = New System.Drawing.Point(110, 67),
-                .Size = New System.Drawing.Size(260, 24),
+                .Location = New Drw.Point(110, 67),
+                .Size = New Drw.Size(260, 24),
                 .DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
             }
             grpDef.Controls.Add(_lblTB)
@@ -516,7 +869,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             grpDef.Controls.Add(_cboBorder)
             Me.Controls.Add(grpDef)
 
-            ' ============ BUTTONS ============
             Dim pnlBottom As New System.Windows.Forms.FlowLayoutPanel With {
                 .Dock = System.Windows.Forms.DockStyle.Bottom,
                 .Height = 55,
@@ -526,13 +878,13 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             }
             _btnCancel = New System.Windows.Forms.Button With {
                 .Text = "Đóng",
-                .Size = New System.Drawing.Size(90, 32),
+                .Size = New Drw.Size(90, 32),
                 .Margin = New System.Windows.Forms.Padding(5, 0, 0, 0),
                 .DialogResult = System.Windows.Forms.DialogResult.Cancel
             }
             _btnOK = New System.Windows.Forms.Button With {
                 .Text = "Thực hiện",
-                .Size = New System.Drawing.Size(90, 32),
+                .Size = New Drw.Size(90, 32),
                 .Margin = New System.Windows.Forms.Padding(5, 0, 0, 0)
             }
             AddHandler _btnOK.Click, AddressOf HandleOKClick
@@ -645,12 +997,9 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             End Select
         End Sub
 
-        ' =====================================================
-        ' NHỚ LỆNH — lưu vào %APPDATA%\ToolInventor2025\DrawingTool.cfg
-        ' =====================================================
         Private Function GetConfigPath() As String
             Dim appData As String = System.Environment.GetFolderPath(
-        System.Environment.SpecialFolder.ApplicationData)
+                System.Environment.SpecialFolder.ApplicationData)
             Dim dir As String = System.IO.Path.Combine(appData, "ToolInventor2025")
             If Not System.IO.Directory.Exists(dir) Then System.IO.Directory.CreateDirectory(dir)
             Return System.IO.Path.Combine(dir, "DrawingTool.cfg")
