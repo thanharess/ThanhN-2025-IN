@@ -144,7 +144,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Dim skip As Integer = 0
             Dim fail As Integer = 0
 
-            invApp.SilentOperation = True
+            invApp.SilentOperation = False   ' ⭐ Border.Delete bị chặn nếu Silent=True
             Try
                 Select Case scope
                     Case "ALL"
@@ -173,7 +173,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 End Select
             Catch
             End Try
-            invApp.SilentOperation = False
 
             Try : drawDoc.Update2(True) : Catch : End Try
 
@@ -225,7 +224,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             If Not ValidateDrawing(invApp, drawDoc, title) Then Return
 
             '=================================================
-            ' ⭐ KIỂM TRA DEFINITION TRƯỚC KHI CHẠY
+            ' KIỂM TRA DEFINITION TRƯỚC KHI CHẠY
             '=================================================
             Dim tbDef As Inventor.TitleBlockDefinition = Nothing
             Dim bdDef As Inventor.BorderDefinition = Nothing
@@ -281,11 +280,14 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Dim originalSheet As Inventor.Sheet = drawDoc.ActiveSheet
             Dim result As New List(Of SheetResult)
 
-            invApp.SilentOperation = True
+            ' ⭐ SilentOperation = True SẼ CHẶN Border.Delete() và AddBorder()
+            ' → phải TẮT thì thao tác Border mới thành công
+            invApp.SilentOperation = False
+
             Try
                 For Each oSheet As Inventor.Sheet In targetSheets
 
-                    ' ⭐ Activate sheet trước khi thao tác (BẮT BUỘC cho Inventor 2025)
+                    ' Activate sheet trước khi thao tác (BẮT BUỘC cho Inventor 2025)
                     Try : oSheet.Activate() : Catch : End Try
                     Try : drawDoc.Update() : Catch : End Try
 
@@ -297,21 +299,27 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                     ' TITLE BLOCK
                     '=============================================
                     If tbName IsNot Nothing Then
-                        Dim r2 = ReplaceTBOnSheet_Ex(oSheet, tbDef, tbName)
+                        Dim tbErr As String = ""
+                        Dim r2 = ReplaceTBOnSheet_Ex(oSheet, tbDef, tbName, tbErr)
                         r.TB_Status = r2
+                        r.TB_Error = tbErr
                     End If
 
                     '=============================================
-                    ' BORDER — có kiểm tra riêng
+                    ' BORDER — hàm trả về String
                     '=============================================
                     If bdName IsNot Nothing Then
-                        Dim r3 = ReplaceBDOnSheet_Ex(oSheet, bdDef, bdName)
-                        r.BD_Status = r3
+                        Dim resStr As String = ReplaceBDOnSheet_Ex(oSheet, bdDef, bdName)
+                        r.BD_Status = ParseBorderResult(resStr)
+                        If resStr IsNot Nothing AndAlso resStr.StartsWith("ERROR:") Then
+                            r.BD_Error = resStr.Substring(6).Trim()
+                        End If
                     End If
 
                     result.Add(r)
                 Next
-            Catch
+            Catch ex As Exception
+                MessageBox.Show("Lỗi vòng lặp: " & ex.Message, title)
             End Try
 
             ' Restore sheet ban đầu
@@ -320,7 +328,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Catch
             End Try
 
-            invApp.SilentOperation = False
             Try : drawDoc.Update2(True) : Catch : End Try
 
             '=================================================
@@ -331,21 +338,25 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             msg.AppendLine()
 
             Dim cntTB_OK As Integer = 0
+            Dim cntTB_Added As Integer = 0
             Dim cntTB_Skip As Integer = 0
             Dim cntTB_Fail As Integer = 0
             Dim cntBD_OK As Integer = 0
+            Dim cntBD_Added As Integer = 0
             Dim cntBD_Skip As Integer = 0
             Dim cntBD_Fail As Integer = 0
 
             For Each r In result
                 If tbName IsNot Nothing Then
                     If r.TB_Status = ReplaceStatus.Success Then cntTB_OK += 1
+                    If r.TB_Status = ReplaceStatus.Added Then cntTB_Added += 1
                     If r.TB_Status = ReplaceStatus.Skipped Then cntTB_Skip += 1
                     If r.TB_Status = ReplaceStatus.Failed Then cntTB_Fail += 1
                 End If
 
                 If bdName IsNot Nothing Then
                     If r.BD_Status = ReplaceStatus.Success Then cntBD_OK += 1
+                    If r.BD_Status = ReplaceStatus.Added Then cntBD_Added += 1
                     If r.BD_Status = ReplaceStatus.Skipped Then cntBD_Skip += 1
                     If r.BD_Status = ReplaceStatus.Failed Then cntBD_Fail += 1
                 End If
@@ -353,27 +364,38 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
 
             If tbName IsNot Nothing Then
                 msg.AppendLine("── TITLE BLOCK ──")
-                msg.AppendLine("  ✔ Thay OK   : " & cntTB_OK.ToString())
-                If cntTB_Skip > 0 Then msg.AppendLine("  ⊘ Bỏ qua    : " & cntTB_Skip.ToString())
-                If cntTB_Fail > 0 Then msg.AppendLine("  ✘ Lỗi       : " & cntTB_Fail.ToString())
+                msg.AppendLine("  ✔ Thay thế   : " & cntTB_OK.ToString())
+                If cntTB_Added > 0 Then msg.AppendLine("  ✚ Thêm mới   : " & cntTB_Added.ToString())
+                If cntTB_Skip > 0 Then msg.AppendLine("  ⊘ Bỏ qua     : " & cntTB_Skip.ToString())
+                If cntTB_Fail > 0 Then msg.AppendLine("  ✘ Lỗi        : " & cntTB_Fail.ToString())
                 msg.AppendLine()
             End If
 
             If bdName IsNot Nothing Then
                 msg.AppendLine("── BORDER ──")
-                msg.AppendLine("  ✔ Thay OK   : " & cntBD_OK.ToString())
-                If cntBD_Skip > 0 Then msg.AppendLine("  ⊘ Bỏ qua    : " & cntBD_Skip.ToString())
-                If cntBD_Fail > 0 Then msg.AppendLine("  ✘ Lỗi       : " & cntBD_Fail.ToString())
+                msg.AppendLine("  ✔ Thay thế   : " & cntBD_OK.ToString())
+                If cntBD_Added > 0 Then msg.AppendLine("  ✚ Thêm mới   : " & cntBD_Added.ToString())
+                If cntBD_Skip > 0 Then msg.AppendLine("  ⊘ Bỏ qua     : " & cntBD_Skip.ToString())
+                If cntBD_Fail > 0 Then msg.AppendLine("  ✘ Lỗi        : " & cntBD_Fail.ToString())
             End If
 
             If cntTB_Fail > 0 OrElse cntBD_Fail > 0 Then
                 msg.AppendLine()
-                msg.AppendLine("⚠ Có sheet lỗi. Chi tiết:")
+                msg.AppendLine("⚠ Chi tiết sheet lỗi (tối đa 15 dòng):")
+                Dim shown As Integer = 0
                 For Each r In result
-                    If r.TB_Status = ReplaceStatus.Failed OrElse r.BD_Status = ReplaceStatus.Failed Then
+                    If (r.TB_Status = ReplaceStatus.Failed OrElse r.BD_Status = ReplaceStatus.Failed) AndAlso shown < 15 Then
                         msg.AppendLine("  • " & r.SheetName)
+                        If r.TB_Status = ReplaceStatus.Failed AndAlso Not String.IsNullOrEmpty(r.TB_Error) Then
+                            msg.AppendLine("      TB → " & r.TB_Error)
+                        End If
+                        If r.BD_Status = ReplaceStatus.Failed AndAlso Not String.IsNullOrEmpty(r.BD_Error) Then
+                            msg.AppendLine("      BD → " & r.BD_Error)
+                        End If
+                        shown += 1
                     End If
                 Next
+                If shown >= 15 Then msg.AppendLine("  ... (còn nữa)")
             End If
 
             MessageBox.Show(msg.ToString(), title,
@@ -391,6 +413,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             NotApplied = 0
             Success = 1
             Skipped = 2
+            Added = 3
             Failed = -1
         End Enum
 
@@ -398,7 +421,22 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Public SheetName As String = ""
             Public TB_Status As ReplaceStatus = ReplaceStatus.NotApplied
             Public BD_Status As ReplaceStatus = ReplaceStatus.NotApplied
+            Public TB_Error As String = ""
+            Public BD_Error As String = ""
         End Class
+
+        ' ⭐ Đọc kết quả String từ ReplaceBDOnSheet_Ex
+        Private Function ParseBorderResult(resStr As String) As ReplaceStatus
+            If String.IsNullOrEmpty(resStr) Then Return ReplaceStatus.Failed
+            If resStr.StartsWith("ERROR:") Then Return ReplaceStatus.Failed
+
+            Select Case resStr.Trim()
+                Case "Success" : Return ReplaceStatus.Success
+                Case "Skipped" : Return ReplaceStatus.Skipped
+                Case "Added" : Return ReplaceStatus.Added
+                Case Else : Return ReplaceStatus.Failed
+            End Select
+        End Function
 
 
         ' =====================================================
@@ -406,19 +444,15 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
         ' =====================================================
         Private Function ReplaceTBOnSheet_Ex(oSheet As Inventor.Sheet,
                                              tbDef As Inventor.TitleBlockDefinition,
-                                             tbName As String) As ReplaceStatus
+                                             tbName As String,
+                                             ByRef errMsg As String) As ReplaceStatus
+            errMsg = ""
             Try
                 Dim drawDoc As Inventor.DrawingDocument = oSheet.Parent
 
-                '=============================================
-                ' KIỂM TRA: Đã có Title Block chưa
-                '=============================================
                 Dim hadOld As Boolean = (oSheet.TitleBlock IsNot Nothing)
 
-                '=============================================
-                ' KIỂM TRA: Title Block hiện tại có phải là mẫu cần thay không?
-                ' Nếu trùng tên → bỏ qua
-                '=============================================
+                ' Trùng tên → bỏ qua
                 If hadOld Then
                     Try
                         Dim oldName As String = oSheet.TitleBlock.Definition.Name
@@ -427,167 +461,180 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         End If
                     Catch
                     End Try
-                End If
 
-                '=============================================
-                ' XÓA CŨ
-                '=============================================
-                If hadOld Then
+                    ' XÓA CŨ
                     Try
                         oSheet.TitleBlock.Delete()
                         Try : drawDoc.Update() : Catch : End Try
-                    Catch
+                    Catch ex As Exception
+                        errMsg = "Delete TB: " & ex.Message
                         Return ReplaceStatus.Failed
                     End Try
                 End If
 
-                '=============================================
                 ' THÊM MỚI
-                '=============================================
                 Try
                     oSheet.AddTitleBlock(tbDef)
                     Try : drawDoc.Update() : Catch : End Try
-                Catch
+                Catch ex As Exception
+                    errMsg = "AddTitleBlock: " & ex.Message
                     Return ReplaceStatus.Failed
                 End Try
 
-                '=============================================
-                ' ⭐ VERIFY: Kiểm tra đã add thành công
-                '=============================================
+                ' VERIFY
                 Try
                     If oSheet.TitleBlock Is Nothing Then
+                        errMsg = "Sau AddTitleBlock: TitleBlock vẫn Nothing"
                         Return ReplaceStatus.Failed
                     End If
 
-                    ' Kiểm tra tên definition khớp
                     Dim newName As String = ""
                     Try : newName = oSheet.TitleBlock.Definition.Name : Catch : End Try
 
                     If Not String.IsNullOrEmpty(newName) AndAlso
                        Not String.Equals(newName, tbName, StringComparison.OrdinalIgnoreCase) Then
+                        errMsg = "Tên không khớp: " & newName & " vs " & tbName
                         Return ReplaceStatus.Failed
                     End If
                 Catch
                 End Try
 
-                Return ReplaceStatus.Success
+                If hadOld Then
+                    Return ReplaceStatus.Success
+                Else
+                    Return ReplaceStatus.Added
+                End If
 
-            Catch
+            Catch ex As Exception
+                errMsg = "Outer: " & ex.Message
                 Return ReplaceStatus.Failed
             End Try
         End Function
 
 
         ' =====================================================
-        ' ⭐ THAY BORDER — KIỂM TRA CHI TIẾT
+        ' ⭐ THAY BORDER — TRẢ VỀ STRING
         ' =====================================================
-        Private Function ReplaceBDOnSheet_Ex(oSheet As Inventor.Sheet,
-                                             bdDef As Inventor.BorderDefinition,
-                                             bdName As String) As ReplaceStatus
+        Private Function ReplaceBDOnSheet_Ex(
+            ByVal oSheet As Inventor.Sheet,
+            ByVal bdDef As Inventor.BorderDefinition,
+            ByVal bdName As String
+        ) As String
+
             Try
-                Dim drawDoc As Inventor.DrawingDocument = oSheet.Parent
-
-                '=============================================
-                ' KIỂM TRA 1: Border definition hợp lệ
-                '=============================================
-                If bdDef Is Nothing Then Return ReplaceStatus.Failed
-
-                '=============================================
-                ' KIỂM TRA 2: Sheet có tồn tại Border cũ không
-                '=============================================
-                Dim oldBorder As Inventor.Border = Nothing
+                Dim oldBorder As Object = Nothing
                 Dim hadOld As Boolean = False
+                Dim oldName As String = ""
 
+                '=========================================================
+                ' 1. KIỂM TRA BORDER HIỆN TẠI
+                '=========================================================
                 Try
                     oldBorder = oSheet.Border
-                    hadOld = (oldBorder IsNot Nothing)
+
+                    If oldBorder IsNot Nothing Then
+                        hadOld = True
+
+                        Try
+                            oldName = oldBorder.Definition.Name
+                        Catch
+                            oldName = ""
+                        End Try
+                    End If
                 Catch
                     hadOld = False
                 End Try
 
-                '=============================================
-                ' KIỂM TRA 3: Border cũ có trùng tên mẫu mới không?
-                ' Nếu trùng → bỏ qua, không làm gì
-                '=============================================
-                If hadOld AndAlso oldBorder IsNot Nothing Then
-                    Try
-                        Dim oldName As String = oldBorder.Definition.Name
-                        If String.Equals(oldName, bdName, StringComparison.OrdinalIgnoreCase) Then
-                            Return ReplaceStatus.Skipped
-                        End If
-                    Catch
-                    End Try
+                '=========================================================
+                ' 2. ĐÃ ĐÚNG BORDER -> BỎ QUA
+                '=========================================================
+                If hadOld AndAlso
+                   String.Equals(oldName, bdName, StringComparison.OrdinalIgnoreCase) Then
+
+                    Return "Skipped"
                 End If
 
-                '=============================================
-                ' KIỂM TRA 4: Border cũ có bị khóa không? (nếu API hỗ trợ)
-                '=============================================
-                If hadOld AndAlso oldBorder IsNot Nothing Then
+                '=========================================================
+                ' 3. XÓA BORDER CŨ NẾU CÓ
+                '=========================================================
+                If hadOld Then
                     Try
-                        ' Kiểm tra quyền xóa — một số Border bị khóa bởi Sheet Format
-                        ' Nếu không xóa được → return Failed
                         oldBorder.Delete()
-                        Try : drawDoc.Update() : Catch : End Try
-                    Catch
-                        ' Không xóa được Border cũ
-                        Return ReplaceStatus.Failed
+                    Catch ex As Exception
+                        Throw New Exception(
+                            "Không xóa được Border cũ: " & ex.Message
+                        )
                     End Try
                 End If
 
-                '=============================================
-                ' THÊM BORDER MỚI
-                '=============================================
-                Try
+                '=========================================================
+                ' 4. THÊM BORDER MỚI
+                '=========================================================
+                If bdDef.IsDefault Then
+                    oSheet.AddDefaultBorder()
+                Else
                     oSheet.AddBorder(bdDef)
-                    Try : drawDoc.Update() : Catch : End Try
-                Catch
-                    Return ReplaceStatus.Failed
-                End Try
+                End If
 
-                '=============================================
-                ' ⭐ VERIFY 1: Kiểm tra đã có Border sau khi add
-                '=============================================
-                Dim newBorder As Inventor.Border = Nothing
+                '=========================================================
+                ' 5. KIỂM TRA LẠI
+                '=========================================================
+                Dim newBorder As Object = Nothing
+
                 Try
                     newBorder = oSheet.Border
-                    If newBorder Is Nothing Then
-                        Return ReplaceStatus.Failed
-                    End If
                 Catch
-                    Return ReplaceStatus.Failed
+                    newBorder = Nothing
                 End Try
 
-                '=============================================
-                ' ⭐ VERIFY 2: Kiểm tra tên definition của Border mới
-                '=============================================
-                Try
-                    Dim newName As String = newBorder.Definition.Name
-                    If Not String.IsNullOrEmpty(newName) AndAlso
-                       Not String.Equals(newName, bdName, StringComparison.OrdinalIgnoreCase) Then
-                        Return ReplaceStatus.Failed
-                    End If
-                Catch
-                End Try
-
-                '=============================================
-                ' ⭐ VERIFY 3: Kiểm tra Border mới có khác Border cũ
-                '    (nếu Border mới giống hệt Border cũ → có thể là lỗi)
-                '=============================================
-                If hadOld AndAlso oldBorder IsNot Nothing Then
-                    Try
-                        Dim oldName As String = oldBorder.Definition.Name
-                        If String.Equals(oldName, bdName, StringComparison.OrdinalIgnoreCase) Then
-                            ' Đã xử lý ở bước trên
-                            Return ReplaceStatus.Skipped
-                        End If
-                    Catch
-                    End Try
+                If newBorder Is Nothing Then
+                    Throw New Exception(
+                        "Đã gọi lệnh thêm Border nhưng Sheet vẫn không có Border."
+                    )
                 End If
 
-                Return ReplaceStatus.Success
+                '=========================================================
+                ' 6. KIỂM TRA TÊN BORDER
+                '=========================================================
+                Dim newName As String = ""
 
-            Catch
-                Return ReplaceStatus.Failed
+                Try
+                    newName = newBorder.Definition.Name
+                Catch
+                    newName = ""
+                End Try
+
+                If bdDef.IsDefault Then
+                    If hadOld Then
+                        Return "Success"
+                    Else
+                        Return "Added"
+                    End If
+                Else
+                    If Not String.Equals(
+                        newName,
+                        bdName,
+                        StringComparison.OrdinalIgnoreCase
+                    ) Then
+
+                        Throw New Exception(
+                            "Border sau khi thêm không đúng." &
+                            vbCrLf &
+                            "Yêu cầu: " & bdName &
+                            vbCrLf &
+                            "Thực tế: " & newName
+                        )
+                    End If
+                End If
+
+                If hadOld Then
+                    Return "Success"
+                Else
+                    Return "Added"
+                End If
+
+            Catch ex As Exception
+                Return "ERROR: " & ex.Message
             End Try
         End Function
 
