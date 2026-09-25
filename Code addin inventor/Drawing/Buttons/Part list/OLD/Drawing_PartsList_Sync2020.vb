@@ -46,16 +46,10 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
         Public Class ColumnInfo
             Public Property Title As String = ""
             Public Property PropTypeRaw As Object = Nothing
-            Public Property PropSet As String = ""
-            Public Property PropName As String = ""
+            Public Property PropSet As String = ""      ' InternalName / GUID
+            Public Property PropName As String = ""     ' tên hoặc PropId dạng string
+            Public Property PropId As Object = Nothing  ' Long PropId nếu có
             Public Property Width As Double = 0
-
-            ''' <summary>Key để so sánh: PropSet|PropName|Title</summary>
-            Public ReadOnly Property Key As String
-                Get
-                    Return (PropSet & "|" & PropName & "|" & Title).ToUpper()
-                End Get
-            End Property
         End Class
 
 
@@ -113,18 +107,34 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Try
                 Dim invApp = GetInventorApp()
                 If invApp Is Nothing Then Return result
-
                 Dim drawDoc As Inventor.DrawingDocument = CType(invApp.ActiveDocument, Inventor.DrawingDocument)
                 Dim oSheet As Inventor.Sheet = drawDoc.Sheets.Item(sheetName)
                 Dim pl As Inventor.PartsList = oSheet.PartsLists.Item(plIdx)
 
                 For Each col As Inventor.PartsListColumn In pl.PartsListColumns
                     Dim info As New ColumnInfo()
-                    Try : info.PropTypeRaw = col.PropertyType : Catch : End Try
-                    Try : info.PropSet = col.PropertySetName : Catch : End Try
-                    Try : info.PropName = col.PropertyName : Catch : End Try
                     Try : info.Title = col.Title : Catch : End Try
                     Try : info.Width = col.Width : Catch : End Try
+                    Try : info.PropTypeRaw = col.PropertyType : Catch : End Try
+
+                    Dim pt As PropertyTypeEnum = PropertyTypeEnum.kFileProperty
+                    Try : pt = CType(col.PropertyType, PropertyTypeEnum) : Catch : End Try
+
+                    If pt = PropertyTypeEnum.kFileProperty Then
+                        ' ★ Cách đúng cho file property
+                        Dim setId As String = ""
+                        Dim propId As Integer = 0
+                        Try
+                            col.GetFilePropertyId(setId, propId)
+                            info.PropSet = setId
+                            info.PropId = propId
+                            info.PropName = propId.ToString()
+                        Catch
+                        End Try
+                    ElseIf pt = PropertyTypeEnum.kCustomProperty Then
+                        Try : info.PropName = col.CustomPropertyName : Catch : End Try
+                    End If
+
                     result.Add(info)
                 Next
             Catch
@@ -232,7 +242,11 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         log.AppendLine("  ✓ Thêm: '" & info.Title & "'")
                     Else
                         failed += 1
-                        log.AppendLine("  ✗ Thêm lỗi: '" & info.Title & "'")
+                        log.AppendLine("  ✗ Thêm lỗi: '" & info.Title & "'" &
+                   "  Type=" & If(info.PropTypeRaw, "?").ToString() &
+                   "  Set=" & If(info.PropSet, "") &
+                   "  Name=" & If(info.PropName, "") &
+                   "  Id=" & If(info.PropId, "").ToString())
                     End If
                 Next
                 Try : drawDoc.Update() : Catch : End Try
@@ -327,6 +341,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
             Catch ex As Exception
                 log.AppendLine()
                 log.AppendLine("❌ LỖI: " & ex.Message)
+
             Finally
                 Try
                     If originalSheet IsNot Nothing Then originalSheet.Activate()
@@ -355,56 +370,36 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
         ' THÊM 1 CỘT VÀO PARTSLIST — dùng late binding
         '=========================================================
         Private Function AddColumn(ByVal pl As Inventor.PartsList,
-                                    ByVal propType As Inventor.PropertyTypeEnum,
-                                    ByVal info As ColumnInfo) As Boolean
+                           ByVal propType As Inventor.PropertyTypeEnum,
+                           ByVal info As ColumnInfo) As Boolean
+            Dim cols As Inventor.PartsListColumns = pl.PartsListColumns
+            Dim newCol As Inventor.PartsListColumn = Nothing
 
-            ' Thử signature 4 tham số (đầy đủ)
             Try
-                Dim cols As Object = pl.PartsListColumns
-                Dim newCol As Inventor.PartsListColumn =
-                    DirectCast(cols.Add(propType, info.PropSet, info.PropName, info.Title),
-                               Inventor.PartsListColumn)
-                If newCol IsNot Nothing Then
-                    Try
-                        If info.Width > 0 Then newCol.Width = info.Width
-                    Catch
-                    End Try
-                    Return True
+                If propType = PropertyTypeEnum.kFileProperty Then
+                    If String.IsNullOrEmpty(info.PropSet) OrElse info.PropId Is Nothing Then Return False
+                    newCol = cols.Add(propType, info.PropSet, CInt(info.PropId))
+                ElseIf propType = PropertyTypeEnum.kCustomProperty Then
+                    If String.IsNullOrEmpty(info.PropName) Then Return False
+                    newCol = cols.Add(propType, , info.PropName)
+                Else
+                    ' Item, Qty, Material, Filename...
+                    newCol = cols.Add(propType)
                 End If
             Catch
+                Return False
             End Try
 
-            ' Thử signature 3 tham số
+            If newCol Is Nothing Then Return False
             Try
-                Dim cols As Object = pl.PartsListColumns
-                Dim newCol As Inventor.PartsListColumn =
-                    DirectCast(cols.Add(propType, info.PropSet, info.PropName),
-                               Inventor.PartsListColumn)
-                If newCol IsNot Nothing Then
-                    Try : newCol.Title = info.Title : Catch : End Try
-                    Try
-                        If info.Width > 0 Then newCol.Width = info.Width
-                    Catch
-                    End Try
-                    Return True
-                End If
+                If Not String.IsNullOrEmpty(info.Title) Then newCol.Title = info.Title
             Catch
             End Try
-
-            ' Thử signature chỉ PropertyType
             Try
-                Dim cols As Object = pl.PartsListColumns
-                Dim newCol As Inventor.PartsListColumn =
-                    DirectCast(cols.Add(propType),
-                               Inventor.PartsListColumn)
-                If newCol IsNot Nothing Then
-                    Try : newCol.Title = info.Title : Catch : End Try
-                    Return True
-                End If
+                If info.Width > 0 Then newCol.Width = info.Width
             Catch
             End Try
-
-            Return False
+            Return True
         End Function
 
 
@@ -811,6 +806,7 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
 
             Me.DialogResult = System.Windows.Forms.DialogResult.OK
             Me.Close()
+
         End Sub
 
     End Class
