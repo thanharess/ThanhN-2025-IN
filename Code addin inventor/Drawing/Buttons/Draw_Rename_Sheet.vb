@@ -104,47 +104,132 @@ Namespace ToolInventor2025.Drawing.Buttons
 
                 '=========================================================
                 ' ⭐ MODE RESET: Đổi về tên mặc định Sheet:1, Sheet:2...
+                '
+                ' Dùng 2 PASS để tránh trùng tên:
+                '   Pass 1: Đổi tất cả về temp name (__TEMP__xxx)
+                '   Pass 2: Đổi về tên mặc định theo vị trí thật
                 '=========================================================
                 If resetMode Then
 
-                    Dim sheetList As New List(Of Sheet)
-                    For Each sh As Sheet In oDrawDoc.Sheets
-                        sheetList.Add(sh)
-                    Next
+                    '--- Xác định danh sách sheet cần reset ---
+                    Dim targetSheets As New List(Of Sheet)
+                    Dim oldNames As New List(Of String)
 
-                    For i As Integer = 0 To sheetList.Count - 1
-                        Dim sh As Sheet = sheetList(i)
-                        Dim newName As String = "Sheet:" & (i + 1).ToString()
+                    If allSheets Then
+                        For Each sh As Sheet In oDrawDoc.Sheets
+                            targetSheets.Add(sh)
+                            oldNames.Add(sh.Name)
+                        Next
+                    Else
+                        If oDrawDoc.ActiveSheet IsNot Nothing Then
+                            targetSheets.Add(oDrawDoc.ActiveSheet)
+                            oldNames.Add(oDrawDoc.ActiveSheet.Name)
+                        End If
+                    End If
 
-                        Try
-                            Dim oldName As String = sh.Name
-                            If String.Equals(oldName, newName, System.StringComparison.OrdinalIgnoreCase) Then
-                                log.AppendLine("  ⏭ " & oldName & ": đã đúng tên mặc định")
+                    If targetSheets.Count = 0 Then
+                        MessageBox.Show("Không có sheet nào.", "Thông báo")
+                        Return
+                    End If
+
+                    '═════════════════════════════════════════════════
+                    ' RESET TOÀN BỘ — 2 pass
+                    '═════════════════════════════════════════════════
+                    If allSheets Then
+
+                        '--- PASS 1: Đổi tất cả về temp ---
+                        For i As Integer = 0 To targetSheets.Count - 1
+                            Try
+                                targetSheets(i).Name = "__TEMP__" &
+                                    System.Guid.NewGuid().ToString("N").Substring(0, 8)
+                            Catch
+                            End Try
+                        Next
+
+                        '--- PASS 2: Đổi về tên mặc định theo vị trí thật ---
+                        For i As Integer = 0 To targetSheets.Count - 1
+                            Dim sh As Sheet = targetSheets(i)
+
+                            '--- Xác định vị trí thật của sheet trong drawing ---
+                            Dim sheetIdx As Integer = 0
+                            For j As Integer = 1 To oDrawDoc.Sheets.Count
+                                If oDrawDoc.Sheets.Item(j) Is sh Then
+                                    sheetIdx = j
+                                    Exit For
+                                End If
+                            Next
+
+                            If sheetIdx = 0 Then
+                                nFail += 1
+                                log.AppendLine("  ✘ " & oldNames(i) & ": không xác định được vị trí")
                                 Continue For
                             End If
 
-                            If IsNameTaken(oDrawDoc, sh, newName) Then
-                                Dim tempName As String = "__TEMP__" & System.Guid.NewGuid().ToString("N").Substring(0, 8)
-                                sh.Name = tempName
-                            End If
+                            Dim newName As String = "Sheet:" & sheetIdx.ToString()
 
+                            Try
+                                sh.Name = newName
+                                nOK += 1
+                                log.AppendLine("  ✔ " & oldNames(i) & "  →  " & newName)
+                            Catch ex As Exception
+                                nFail += 1
+                                log.AppendLine("  ✘ " & oldNames(i) & ": " & ex.Message)
+                            End Try
+                        Next
+
+                        '═════════════════════════════════════════════════
+                        ' RESET CHỈ 1 SHEET
+                        '═════════════════════════════════════════════════
+                    Else
+
+                        Dim sh As Sheet = targetSheets(0)
+
+                        '--- Xác định vị trí thật của sheet ---
+                        Dim sheetIdx As Integer = 0
+                        For j As Integer = 1 To oDrawDoc.Sheets.Count
+                            If oDrawDoc.Sheets.Item(j) Is sh Then
+                                sheetIdx = j
+                                Exit For
+                            End If
+                        Next
+
+                        If sheetIdx = 0 Then
+                            MessageBox.Show("Không xác định được vị trí sheet.", "Lỗi",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                            Return
+                        End If
+
+                        Dim newName As String = "Sheet:" & sheetIdx.ToString()
+
+                        '--- Nếu trùng tên với sheet khác → thêm suffix ---
+                        If IsNameTaken(oDrawDoc, sh, newName) Then
+                            Dim suffix As Integer = 1
+                            Dim candidate As String = newName & "_" & suffix.ToString()
+                            While IsNameTaken(oDrawDoc, sh, candidate) AndAlso suffix < 100
+                                suffix += 1
+                                candidate = newName & "_" & suffix.ToString()
+                            End While
+                            log.AppendLine("  ⚠ Trùng → " & candidate)
+                            newName = candidate
+                        End If
+
+                        Try
                             sh.Name = newName
                             nOK += 1
-                            log.AppendLine("  ✔ " & oldName & "  →  " & newName)
-
+                            log.AppendLine("  ✔ " & oldNames(0) & "  →  " & newName)
                         Catch ex As Exception
                             nFail += 1
-                            log.AppendLine("  ✘ Sheet " & (i + 1) & ": " & ex.Message)
+                            log.AppendLine("  ✘ " & oldNames(0) & ": " & ex.Message)
                         End Try
-                    Next
+                    End If
 
-                    oDrawDoc.Update()
+                    Try : oDrawDoc.Update() : Catch : End Try
 
                     MessageBox.Show(
                         "Hoàn tất reset tên sheet!" & vbCrLf & vbCrLf &
                         "Phạm vi  : " & If(allSheets, "Tất cả sheet", "Sheet đang mở") & vbCrLf &
-                        "Đã đổi   : " & nOK & " / " & sheetList.Count & vbCrLf &
-                        "Lỗi      : " & nFail & vbCrLf & vbCrLf &
+                        "Đã đổi   : " & nOK.ToString() & " / " & targetSheets.Count.ToString() & vbCrLf &
+                        "Lỗi      : " & nFail.ToString() & vbCrLf & vbCrLf &
                         "--- Chi tiết ---" & vbCrLf &
                         log.ToString(),
                         "Reset tên sheet",
@@ -153,7 +238,6 @@ Namespace ToolInventor2025.Drawing.Buttons
 
                     Return
                 End If
-
                 '=========================================================
                 ' MODE ĐỔI TÊN (Property hoặc Tự đặt)
                 '=========================================================
