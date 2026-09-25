@@ -57,7 +57,7 @@ Namespace ToolInventor2025.Assembly.Buttons.Part
 
             Using form As New Form()
                 '─── FORM SETUP ───
-                form.Text = "Auto Drawing"
+                form.Text = "Chỉnh sửa thông số Part"
                 form.AutoScaleMode = AutoScaleMode.Dpi
                 form.AutoScaleDimensions = New Drw.SizeF(96.0F, 96.0F)
                 form.ClientSize = New Drw.Size(FORM_W, FORM_H)
@@ -78,7 +78,7 @@ Namespace ToolInventor2025.Assembly.Buttons.Part
                 form.Controls.Add(pnlHeader)
 
                 Dim lblTitle As New Label() With {
-                    .Text = "CHỌN KIỂU TẠO BẢN VẼ",
+                    .Text = "CHỌN KIỂU CHỈNH SỬA, LÁY THÔNG SỐ PART",
                     .Font = New Drw.Font("Segoe UI", 14.0F, Drw.FontStyle.Bold, Drw.GraphicsUnit.Point),
                     .ForeColor = Drw.Color.White,
                     .Dock = DockStyle.Fill,
@@ -107,7 +107,7 @@ Namespace ToolInventor2025.Assembly.Buttons.Part
 
                 '─── NÚT HỦY ───
                 Dim btnCancel As New Button()
-                btnCancel.Text = "HỦY"
+                btnCancel.Text = "Hủy"
                 btnCancel.Size = New Drw.Size(FORM_W - PAD * 2, 42)
                 btnCancel.Location = New Drw.Point(PAD, FORM_H - 42 - PAD)
                 btnCancel.FlatStyle = FlatStyle.Flat
