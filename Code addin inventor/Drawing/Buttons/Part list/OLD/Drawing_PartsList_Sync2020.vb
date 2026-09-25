@@ -154,9 +154,16 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                        srcPLIdx As Integer,
                        dstSheet As String,
                        dstPLIdx As Integer)
-            Dim log As New System.Text.StringBuilder()
             Dim invApp As Inventor.Application = Nothing
             Dim originalSheet As Inventor.Sheet = Nothing
+
+            ' ⭐ Biến đếm — khai báo ngoài để MessageBox cuối dùng được
+            Dim removed As Integer = 0
+            Dim added As Integer = 0
+            Dim skipped As Integer = 0
+            Dim failed As Integer = 0
+            Dim updated As Integer = 0
+            Dim reordered As Integer = 0
 
             Try
                 invApp = GetInventorApp()
@@ -169,10 +176,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 Dim oDstSheet As Inventor.Sheet = drawDoc.Sheets.Item(dstSheet)
                 Dim dstPL As Inventor.PartsList = oDstSheet.PartsLists.Item(dstPLIdx)
 
-                log.AppendLine("Nguồn : " & srcSheet & "  PL#" & srcPLIdx & "  (" & srcColumns.Count & " cột)")
-                log.AppendLine("Đích  : " & dstSheet & "  PL#" & dstPLIdx & "  (" & dstPL.PartsListColumns.Count & " cột)")
-                log.AppendLine()
-
                 invApp.SilentOperation = True
                 Try : oDstSheet.Activate() : Catch : End Try
                 Try : drawDoc.Update() : Catch : End Try
@@ -183,8 +186,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 Next
 
                 '── B1. XÓA cột thừa ──
-                log.AppendLine("── XÓA CỘT THỪA ──")
-                Dim removed As Integer = 0
                 For i As Integer = dstPL.PartsListColumns.Count To 1 Step -1
                     Try
                         Dim dcol As Inventor.PartsListColumn = dstPL.PartsListColumns.Item(i)
@@ -196,18 +197,12 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                         If srcKeys.Contains(MakeKey(dSet, dName, dTitle)) Then Continue For
                         dcol.Remove()
                         removed += 1
-                        log.AppendLine("  ✓ Xóa: '" & dTitle & "'")
-                    Catch ex As Exception
-                        log.AppendLine("  ✗ Xóa lỗi: " & ex.Message)
+                    Catch
                     End Try
                 Next
                 Try : drawDoc.Update() : Catch : End Try
 
                 '── B2. THÊM cột thiếu ──
-                log.AppendLine()
-                log.AppendLine("── THÊM CỘT ──")
-                Dim added As Integer = 0, skipped As Integer = 0, failed As Integer = 0
-
                 Dim dstKeys As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
                 For Each dcol As Inventor.PartsListColumn In dstPL.PartsListColumns
                     Dim dSet As String = "", dName As String = "", dTitle As String = ""
@@ -239,22 +234,13 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                     If AddColumn(dstPL, propType, info) Then
                         added += 1
                         dstKeys.Add(key)
-                        log.AppendLine("  ✓ Thêm: '" & info.Title & "'")
                     Else
                         failed += 1
-                        log.AppendLine("  ✗ Thêm lỗi: '" & info.Title & "'" &
-                   "  Type=" & If(info.PropTypeRaw, "?").ToString() &
-                   "  Set=" & If(info.PropSet, "") &
-                   "  Name=" & If(info.PropName, "") &
-                   "  Id=" & If(info.PropId, "").ToString())
                     End If
                 Next
                 Try : drawDoc.Update() : Catch : End Try
 
                 '── B3. CẬP NHẬT Title/Width ──
-                log.AppendLine()
-                log.AppendLine("── CẬP NHẬT Title/Width ──")
-                Dim updated As Integer = 0
                 For Each info In srcColumns
                     For Each dcol As Inventor.PartsListColumn In dstPL.PartsListColumns
                         Try
@@ -285,9 +271,6 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 Next
 
                 '── B4. SẮP XẾP THEO NGUỒN ──
-                log.AppendLine()
-                log.AppendLine("── SẮP XẾP CỘT ──")
-                Dim reordered As Integer = 0
                 For targetPos As Integer = 1 To srcColumns.Count
                     Dim info = srcColumns(targetPos - 1)
                     Dim currentPos As Integer = -1
@@ -320,28 +303,15 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                     Try
                         dstPL.PartsListColumns.Item(currentPos).Reposition(targetPos)
                         reordered += 1
-                        log.AppendLine("  ✓ '" & info.Title & "': " & currentPos & " → " & targetPos)
-                    Catch ex As Exception
-                        log.AppendLine("  ✗ Reposition '" & info.Title & "': " & ex.Message)
+                    Catch
                     End Try
                 Next
 
                 Try : drawDoc.Update2(True) : Catch : End Try
 
-                log.AppendLine()
-                log.AppendLine("══ KẾT QUẢ ══")
-                log.AppendLine("  Xóa     : " & removed)
-                log.AppendLine("  Thêm    : " & added)
-                log.AppendLine("  Bỏ qua  : " & skipped)
-                log.AppendLine("  Cập nhật: " & updated)
-                log.AppendLine("  Sắp xếp : " & reordered)
-                log.AppendLine("  Lỗi thêm: " & failed)
-                log.AppendLine("  Cột sau : " & dstPL.PartsListColumns.Count)
-
             Catch ex As Exception
-                log.AppendLine()
-                log.AppendLine("❌ LỖI: " & ex.Message)
-
+                MessageBox.Show("Lỗi: " & ex.Message, "Sync Result",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error)
             Finally
                 Try
                     If originalSheet IsNot Nothing Then originalSheet.Activate()
@@ -353,7 +323,27 @@ Namespace ToolInventor2025.Drawing.Buttons.DrawSheet
                 End Try
             End Try
 
-            MessageBox.Show(log.ToString(), "Sync Result", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            '=================================================
+            ' BÁO CÁO — chỉ hiện tổng kết
+            '=================================================
+            Dim summary As New System.Text.StringBuilder()
+            summary.AppendLine("Hoàn tất đồng bộ cột!")
+            summary.AppendLine()
+            summary.AppendLine("Nguồn : " & srcSheet & "  PL#" & srcPLIdx)
+            summary.AppendLine("Đích  : " & dstSheet & "  PL#" & dstPLIdx)
+            summary.AppendLine()
+            summary.AppendLine("── KẾT QUẢ ──")
+            summary.AppendLine("  Xóa      : " & removed.ToString())
+            summary.AppendLine("  Thêm     : " & added.ToString())
+            summary.AppendLine("  Bỏ qua   : " & skipped.ToString())
+            summary.AppendLine("  Cập nhật : " & updated.ToString())
+            summary.AppendLine("  Sắp xếp  : " & reordered.ToString())
+            summary.AppendLine("  Lỗi      : " & failed.ToString())
+
+            MessageBox.Show(summary.ToString(),
+                    "Sync Result",
+                    MessageBoxButtons.OK,
+                    If(failed > 0, MessageBoxIcon.Warning, MessageBoxIcon.Information))
         End Sub
 
         Private Function MakeKey(propSet As String, propName As String, title As String) As String

@@ -184,17 +184,15 @@ Namespace ToolInventor2025.Drawing.Buttons
                 End If
 
                 MessageBox.Show(
-                    "Hoàn tất!" & vbCrLf & vbCrLf &
-                    "Phạm vi: " & If(allSheets, "Tất cả sheet", "Sheet đang mở") & vbCrLf &
-                    "Chế độ : " & modeLabel & vbCrLf &
-                    "Hậu tố: " & If(appendNumber, "Có số", "Không") & vbCrLf &
-                    "Đổi tên: " & nOK & " / " & targets.Count & vbCrLf &
-                    "Lỗi: " & nFail & vbCrLf & vbCrLf &
-                    "--- Chi tiết ---" & vbCrLf &
-                    log.ToString(),
-                    "Đổi tên sheet",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information)
+    "Hoàn tất!" & vbCrLf & vbCrLf &
+    "Phạm vi: " & If(allSheets, "Tất cả sheet", "Sheet đang mở") & vbCrLf &
+    "Chế độ : " & modeLabel & vbCrLf &
+    "Hậu tố: " & If(appendNumber, "Có số", "Không") & vbCrLf &
+    "Đổi tên: " & nOK & " / " & targets.Count & vbCrLf &
+    "Lỗi: " & nFail,
+    "Đổi tên sheet",
+    MessageBoxButtons.OK,
+    MessageBoxIcon.Information)
 
             Catch ex As Exception
                 MessageBox.Show("Lỗi:" & vbCrLf & ex.Message,
