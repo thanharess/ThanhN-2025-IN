@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Profile 1": {
-      "commandName": "Executable",
-      "executablePath": "D:\\FILE CAI PHAN MEM\\i\\Inventor 2025\\Inventor 2025\\Bin\\Inventor.exe"
+      "commandName": "Executable"
     }
   }
 }

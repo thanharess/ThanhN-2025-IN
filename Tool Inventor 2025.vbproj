@@ -443,21 +443,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Autodesk.iLogic.Runtime">
-      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.iLogic.Runtime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Autodesk.Inventor.Interop">
-      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.Inventor.Interop.dll</HintPath>
-      <Private>False</Private>
-      <EmbedInteropTypes></EmbedInteropTypes>
-    </Reference>
-    <Reference Include="stdole">
-      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\stdole.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
 
     <Import Include="Autodesk.iLogic.Runtime" />
     <Import Include="Autodesk.iLogic.Runtime.InventorEntities" />
@@ -471,6 +456,27 @@
     <Folder Include="Code addin inventor\Skill Auto\Assembly\" />
     <Folder Include="Code addin inventor\Skill Auto\Drawing\" />
     <Folder Include="Code addin inventor\Skill Auto\Part\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Autodesk.iLogic.Runtime">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Inventor 2025\Bin\Autodesk.iLogic.Runtime.dll</HintPath>
+      <Private>False</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Autodesk.Inventor.Interop">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Inventor 2025\Bin\Autodesk.Inventor.Interop.dll</HintPath>
+      <Private>False</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="stdole">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Inventor 2025\Bin\stdole.dll</HintPath>
+      <Private>False</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
   </ItemGroup>
 
   
