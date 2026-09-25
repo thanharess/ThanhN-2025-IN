@@ -111,7 +111,6 @@ Namespace ToolInventor2025
             ' Create Assembly buttons via helper class
             AssemblyButtons.Register(controlDefs, AddInClientID, m_assemblyButtons, largeIcon, smallIcon)
 
-
             ' Create Drawing buttons via helper class
             DrawingButtons.Register(controlDefs, AddInClientID, m_drawingButtons, largeIcon, smallIcon)
 
@@ -195,55 +194,92 @@ Namespace ToolInventor2025
                     End Try
 
                     If customPanel IsNot Nothing Then
+
+                        '══════════════════════════════════════════════════
+                        ' ⭐ TẠO POPUP MENU (nếu có đăng ký cho panel này)
+                        '══════════════════════════════════════════════════
+                        Try
+                            If AssemblyButtons.PendingPopups.ContainsKey(panelInternalName) Then
+                                For Each pd In AssemblyButtons.PendingPopups(panelInternalName)
+                                    If pd IsNot Nothing AndAlso pd.SubButtons IsNot Nothing AndAlso pd.SubButtons.Count > 0 Then
+                                        Dim objColl As Inventor.ObjectCollection = g_inventorApplication.TransientObjects.CreateObjectCollection()
+                                        For Each sb As ButtonDefinition In pd.SubButtons
+                                            objColl.Add(sb)
+                                        Next
+
+                                        ' AddButtonPopup(collection, useLargeIcon)
+                                        ' Phần tử đầu tiên = nút chính
+                                        customPanel.CommandControls.AddButtonPopup(objColl, True)
+                                    End If
+                                Next
+                            End If
+                        Catch popEx As Exception
+                            ' Fallback: nếu popup API lỗi → add nút đầu tiên (nút chính) vào panel như button thường
+                            Try
+                                If AssemblyButtons.PendingPopups.ContainsKey(panelInternalName) Then
+                                    For Each pd In AssemblyButtons.PendingPopups(panelInternalName)
+                                        If pd.SubButtons IsNot Nothing AndAlso pd.SubButtons.Count > 0 Then
+                                            customPanel.CommandControls.AddButton(pd.SubButtons(0))
+                                        End If
+                                    Next
+                                End If
+                            Catch
+                            End Try
+                        End Try
+
+                        '══════════════════════════════════════════════════
+                        ' THÊM CÁC NÚT THƯỜNG
+                        '══════════════════════════════════════════════════
                         If buttons IsNot Nothing Then
                             If Not usePulldownOnly Then
+
                                 ' Add each button directly to the panel
                                 Dim largeButtonIds As New System.Collections.Generic.HashSet(Of String) From {"ToolInventor2025_Assembly_Btna1", "ToolInventor2025_Assembly_Btna2", "ToolInventor2025_Assembly_Btna3", "ToolInventor2025_Assembly_Btna4",
-                                                     "ToolInventor2025_Part_Btn1", "ToolInventor2025_Part_Btn2", "ToolInventor2025_Part_Btn3", "ToolInventor2025_Part_Btn4", "ToolInventor2025_Part_Btn5",
-                                         "ToolInventor2025_Part_Btn6", "ToolInventor2025_Part_Btn7"
-                                                                                            }
+                                                             "ToolInventor2025_Part_Btn1", "ToolInventor2025_Part_Btn2", "ToolInventor2025_Part_Btn3", "ToolInventor2025_Part_Btn4", "ToolInventor2025_Part_Btn5",
+                                                 "ToolInventor2025_Part_Btn6", "ToolInventor2025_Part_Btn7"
+                                                                                                    }
 
 
 
-                                For Each bd As ButtonDefinition In buttons
-                                    customPanel.CommandControls.AddButton(bd)
-
-                                    Dim useLargeIcon As Boolean = largeButtonIds.Contains(bd.InternalName)
-
-                                    '  customPanel.CommandControls.AddButton(bd, useLargeIcon, useLargeIcon)
-                                Next
-                                ' Next
-                            Else
-                                ' Try to create a pulldown menu; if the API is unavailable, fall back to adding buttons directly
-                                Try
-                                    Dim pulldown As CommandControl = customPanel.CommandControls.AddPulldown(panelDisplayName, panelInternalName & "_Pulldown", AddInClientID)
-                                    For Each bd As ButtonDefinition In buttons
-                                        pulldown.Controls.AddButton(bd)
-                                    Next
-                                Catch pullex As Exception
-                                    ' Fall back: add buttons directly to the panel so functionality remains available
-                                    Try
                                         For Each bd As ButtonDefinition In buttons
                                             customPanel.CommandControls.AddButton(bd)
-                                            ' If bd.InternalName = "ToolInventor2025_Part_Btn5" Then
-                                            ' customPanel.CommandControls.AddButton(bd, True, True)
-                                            ' Else
-                                            ' customPanel.CommandControls.AddButton(bd)
-                                            '   End If
-                                        Next
-                                    Catch
-                                    End Try
-                                    ' Optional diagnostic to show pulldown API not available
-                                    Try
-                                        System.Windows.Forms.MessageBox.Show("Pulldown API unavailable; added buttons directly to panel. " & pullex.Message, "ToolInventor2025", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information)
-                                    Catch
-                                    End Try
-                                End Try
-                            End If
-                        End If
-                    End If
 
-                End If
+                                            Dim useLargeIcon As Boolean = largeButtonIds.Contains(bd.InternalName)
+
+                                            '  customPanel.CommandControls.AddButton(bd, useLargeIcon, useLargeIcon)
+                                        Next
+                                        ' Next
+                                    Else
+                                        ' Try to create a pulldown menu; if the API is unavailable, fall back to adding buttons directly
+                                        Try
+                                            Dim pulldown As CommandControl = customPanel.CommandControls.AddPulldown(panelDisplayName, panelInternalName & "_Pulldown", AddInClientID)
+                                            For Each bd As ButtonDefinition In buttons
+                                                pulldown.Controls.AddButton(bd)
+                                            Next
+                                        Catch pullex As Exception
+                                            ' Fall back: add buttons directly to the panel so functionality remains available
+                                            Try
+                                                For Each bd As ButtonDefinition In buttons
+                                                    customPanel.CommandControls.AddButton(bd)
+                                                    ' If bd.InternalName = "ToolInventor2025_Part_Btn5" Then
+                                                    ' customPanel.CommandControls.AddButton(bd, True, True)
+                                                    ' Else
+                                                    ' customPanel.CommandControls.AddButton(bd)
+                                                    '   End If
+                                                Next
+                                            Catch
+                                            End Try
+                                            ' Optional diagnostic to show pulldown API not available
+                                            Try
+                                                System.Windows.Forms.MessageBox.Show("Pulldown API unavailable; added buttons directly to panel. " & pullex.Message, "ToolInventor2025", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information)
+                                            Catch
+                                            End Try
+                                        End Try
+                                    End If
+                                End If
+                            End If
+
+                        End If
             Catch ex As Exception
                 ' Show diagnostic so we can see why ribbon/pulldown creation failed at runtime
                 Try

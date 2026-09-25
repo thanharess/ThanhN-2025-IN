@@ -1,10 +1,25 @@
 Imports System.Diagnostics.Contracts
+Imports System.Windows.Forms
 Imports Inventor
 
 
 Namespace ToolInventor2025
 #Region "AssemblyButtons"
     Public Class AssemblyButtons
+        '════════════════════════════════════════════════════════════════════
+        ' REGISTRY cho POPUP MENU
+        ' Panel sẽ tạo trong AddToUserInterface → AddTabPanelButtons()
+        ' nhưng ở đó không có reference tới các sub-button definitions
+        ' → dùng dictionary để "gửi" popup tới đó
+        '════════════════════════════════════════════════════════════════════
+        Public Class PopupDef
+            Public SubButtons As New List(Of ButtonDefinition)  ' Phần tử [0] = nút chính
+        End Class
+
+        ''' <summary>
+        ''' Key = panelInternalName, Value = danh sách popup cần tạo trên panel đó
+        ''' </summary>
+        Public Shared ReadOnly PendingPopups As New Dictionary(Of String, List(Of PopupDef))
         Private Shared Function LoadIconFromPath(path As String) As stdole.IPictureDisp
             Try
                 If String.IsNullOrEmpty(path) Then Return Nothing
@@ -22,8 +37,12 @@ Namespace ToolInventor2025
             End Try
         End Function
 
-        Public Shared Sub Register(controlDefs As Inventor.ControlDefinitions, addInClientID As String, buttonsList As System.Collections.Generic.List(Of ButtonDefinition), largeIcon As stdole.IPictureDisp, smallIcon As stdole.IPictureDisp)
-
+        Public Shared Sub Register(
+    controlDefs As Inventor.ControlDefinitions,
+    addInClientID As String,
+    buttonsList As System.Collections.Generic.List(Of ButtonDefinition),
+    largeIcon As stdole.IPictureDisp,
+    smallIcon As stdole.IPictureDisp)
 
             Dim assemblyFolder2 As String = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
             ' Resolve icons folder (prefer user-configured folder if set)
@@ -100,7 +119,22 @@ Namespace ToolInventor2025
             Dim Ass1SmallPath27 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
             Dim Ass1LargePath28 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
             Dim Ass1SmallPath28 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
-
+            Dim Ass1LargePath29 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath29 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
+            Dim Ass1LargePath30 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath30 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
+            Dim Ass1LargePath31 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath31 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
+            Dim Ass1LargePath32 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath32 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
+            Dim Ass1LargePath33 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath33 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
+            Dim Ass1LargePath34 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath34 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
+            Dim Ass1LargePath35 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath35 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
+            Dim Ass1LargePath36 As String = System.IO.Path.Combine(iconsFolder, "i39.bmp")
+            Dim Ass1SmallPath36 As String = System.IO.Path.Combine(iconsFolder, "i39 1.bmp")
 
             ' Load per-button icons (fallback to provided largeIcon/smallIcon when file missing)
             Dim ass1LargeIcon1 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath1), LoadIconFromPath(Ass1LargePath1), largeIcon)
@@ -159,6 +193,20 @@ Namespace ToolInventor2025
             Dim ass1SmallIcon27 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath27), LoadIconFromPath(Ass1SmallPath27), smallIcon)
             Dim ass1LargeIcon28 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath28), LoadIconFromPath(Ass1LargePath28), largeIcon)
             Dim ass1SmallIcon28 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath28), LoadIconFromPath(Ass1SmallPath28), smallIcon)
+            Dim ass1LargeIcon29 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath29), LoadIconFromPath(Ass1LargePath29), largeIcon)
+            Dim ass1SmallIcon29 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath29), LoadIconFromPath(Ass1SmallPath29), smallIcon)
+            Dim ass1LargeIcon30 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath30), LoadIconFromPath(Ass1LargePath30), largeIcon)
+            Dim ass1SmallIcon30 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath30), LoadIconFromPath(Ass1SmallPath30), smallIcon)
+            Dim ass1LargeIcon31 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath31), LoadIconFromPath(Ass1LargePath31), largeIcon)
+            Dim ass1SmallIcon31 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath31), LoadIconFromPath(Ass1SmallPath31), smallIcon)
+            Dim ass1LargeIcon32 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath32), LoadIconFromPath(Ass1LargePath32), largeIcon)
+            Dim ass1SmallIcon32 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath32), LoadIconFromPath(Ass1SmallPath32), smallIcon)
+            Dim ass1LargeIcon33 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath33), LoadIconFromPath(Ass1LargePath33), largeIcon)
+            Dim ass1SmallIcon33 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath33), LoadIconFromPath(Ass1SmallPath33), smallIcon)
+            Dim ass1LargeIcon34 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath34), LoadIconFromPath(Ass1LargePath34), largeIcon)
+            Dim ass1SmallIcon34 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath34), LoadIconFromPath(Ass1SmallPath34), smallIcon)
+            Dim ass1LargeIcon35 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1LargePath35), LoadIconFromPath(Ass1LargePath35), largeIcon)
+            Dim ass1SmallIcon35 As stdole.IPictureDisp = If(System.IO.File.Exists(Ass1SmallPath35), LoadIconFromPath(Ass1SmallPath35), smallIcon)
 #End Region
 
 #Region "Nut cho các assembly"
@@ -172,11 +220,110 @@ Namespace ToolInventor2025
 
 #Region "constrain"
             '============================== Constrain các cụm chi tiết & part về gốc tọa độ của cụm chi tiết đầu tiên chọn ==============
-            Dim assemblyBtn28 As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain, Ground, Delete", "ToolInventor2025_Assembly_Btn28", CommandTypesEnum.kShapeEditCmdType, addInClientID,
-                                                                          Nothing, "Suppress,constrain,Ground" & vbLf & "Constrain Keep position" & vbLf & "Constrain về gốc 2 chi tiết" & vbLf & "Constrain all to select" & vbLf & "Xóa all Constrain lỗi",
-                                                                          ass1SmallIcon28, ass1LargeIcon28)
-            AddHandler assemblyBtn28.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1.OnExecute
-            buttonsList.Add(assemblyBtn28)
+            '  Dim assemblyBtn28 As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain, Ground, Delete", "ToolInventor2025_Assembly_Btn28", CommandTypesEnum.kShapeEditCmdType, addInClientID,
+            '                                                               Nothing, "Suppress,constrain,Ground" & vbLf & "Constrain Keep position" & vbLf & "Constrain về gốc 2 chi tiết" & vbLf & "Constrain all to select" & vbLf & "Xóa all Constrain lỗi",
+            '                                                                ass1SmallIcon28, ass1LargeIcon28)
+            '  AddHandler assemblyBtn28.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1.OnExecute
+            ' buttonsList.Add(assemblyBtn28)
+
+
+
+            '════════════════════════════════════════════════════════════════════
+            ' NÚT 28 — CONSTRAIN với POPUP MENU
+            ' Đăng ký popup vào registry, sẽ được tạo khi panel hình thành
+            '════════════════════════════════════════════════════════════════════
+
+            ' ─── 1. Tạo nút chính (dùng làm main button của popup) ───
+            Dim subBtn1a As ButtonDefinition = controlDefs.AddButtonDefinition("Suppress, Constrain, Ground", "ToolInventor2025_Assembly_Sub1a",
+                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, "Suppress, constrain, Ground tự động", ass1SmallIcon1, ass1LargeIcon1)
+            AddHandler subBtn1a.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1a.OnExecute
+
+            ' ─── 2. Tạo các nút con ───
+            Dim subBtn1b As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain Keep Position", "ToolInventor2025_Assembly_Sub1b", CommandTypesEnum.kShapeEditCmdType,
+                addInClientID, Nothing, "Giữ nguyên vị trí các cụm & gán constrain tự động", ass1SmallIcon2, ass1LargeIcon2)
+            AddHandler subBtn1b.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1b.OnExecute
+
+            Dim subBtn1c As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain về gốc 2 chi tiết", "ToolInventor2025_Assembly_Sub1c", CommandTypesEnum.kShapeEditCmdType,
+                addInClientID, Nothing, "Constrain về gốc tọa độ của chi tiết chọn đầu tiên", ass1SmallIcon3, ass1LargeIcon3)
+            AddHandler subBtn1c.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1c.OnExecute
+
+            Dim subBtn1d As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain All to Select", "ToolInventor2025_Assembly_Sub1d", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                "Constrain tất cả về gốc tọa độ chi tiết được chọn", ass1SmallIcon4, ass1LargeIcon4)
+            AddHandler subBtn1d.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1d.OnExecute
+
+            Dim subBtn1e As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa all Constraint lỗi", "ToolInventor2025_Assembly_Sub1e", CommandTypesEnum.kShapeEditCmdType,
+                addInClientID, Nothing, "Xóa tất cả constrain lỗi trong Assembly", ass1SmallIcon27, ass1LargeIcon27)
+            AddHandler subBtn1e.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1e.OnExecute
+
+            ' ─── 3. Đăng ký popup vào registry ───
+            Dim pd As New PopupDef()
+            pd.SubButtons.Add(subBtn1a)     ' ← PHẦN TỬ ĐẦU = nút chính
+            pd.SubButtons.Add(subBtn1b)
+            pd.SubButtons.Add(subBtn1c)
+            pd.SubButtons.Add(subBtn1d)
+            pd.SubButtons.Add(subBtn1e)
+
+            If Not PendingPopups.ContainsKey("ToolInventor2025_AssemblyPanel") Then
+                PendingPopups("ToolInventor2025_AssemblyPanel") = New List(Of PopupDef)
+            End If
+            PendingPopups("ToolInventor2025_AssemblyPanel").Add(pd)
+
+
+
+            '════════════════════════════════════════════════════════════════════
+            ' NÚT 28 — CONSTRAIN với POPUP MENU
+            ' Đăng ký popup vào registry, sẽ được tạo khi panel hình thành
+            '════════════════════════════════════════════════════════════════════
+
+            ' ─── 1. Tạo nút chính (dùng làm main button của popup) ───
+            Dim subBtn2a As ButtonDefinition = controlDefs.AddButtonDefinition("Suppress, Constrain, Ground", "ToolInventor2025_Assembly_Sub2a",
+                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, "Suppress, constrain, Ground tự động", ass1SmallIcon1, ass1LargeIcon1)
+            AddHandler subBtn2a.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1a.OnExecute
+
+            ' ─── 2. Tạo các nút con ───
+            Dim subBtn2b As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain Keep Position", "ToolInventor2025_Assembly_Sub2b", CommandTypesEnum.kShapeEditCmdType,
+                addInClientID, Nothing, "Giữ nguyên vị trí các cụm & gán constrain tự động", ass1SmallIcon2, ass1LargeIcon2)
+            AddHandler subBtn2b.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1b.OnExecute
+
+            Dim subBtn2c As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain về gốc 2 chi tiết", "ToolInventor2025_Assembly_Sub2c", CommandTypesEnum.kShapeEditCmdType,
+                addInClientID, Nothing, "Constrain về gốc tọa độ của chi tiết chọn đầu tiên", ass1SmallIcon3, ass1LargeIcon3)
+            AddHandler subBtn2c.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1c.OnExecute
+
+            Dim subBtn2d As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain All to Select", "ToolInventor2025_Assembly_Sub2d", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                "Constrain tất cả về gốc tọa độ chi tiết được chọn", ass1SmallIcon4, ass1LargeIcon4)
+            AddHandler subBtn2d.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1d.OnExecute
+
+            Dim subBtn2e As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa all Constraint lỗi", "ToolInventor2025_Assembly_Sub2e", CommandTypesEnum.kShapeEditCmdType,
+                addInClientID, Nothing, "Xóa tất cả constrain lỗi trong Assembly", ass1SmallIcon27, ass1LargeIcon27)
+            AddHandler subBtn2e.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1e.OnExecute
+
+            ' ─── 3. Đăng ký popup vào registry ───
+            Dim pd1 As New PopupDef()
+            pd1.SubButtons.Add(subBtn2a)     ' ← PHẦN TỬ ĐẦU = nút chính
+            pd1.SubButtons.Add(subBtn2b)
+            pd1.SubButtons.Add(subBtn2c)
+            pd1.SubButtons.Add(subBtn2d)
+            pd1.SubButtons.Add(subBtn2e)
+
+            If Not PendingPopups.ContainsKey("ToolInventor2025_AssemblyPanel") Then
+                PendingPopups("ToolInventor2025_AssemblyPanel") = New List(Of PopupDef)
+            End If
+            PendingPopups("ToolInventor2025_AssemblyPanel").Add(pd1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             Dim assemblyBtn1 As ButtonDefinition = controlDefs.AddButtonDefinition("Suppress,constrain,Ground", "ToolInventor2025_Assembly_Btn1", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                    Nothing,
@@ -249,7 +396,7 @@ Namespace ToolInventor2025
             Dim assemblyBtn6 As ButtonDefinition = controlDefs.AddButtonDefinition("Covert to sheetmetal", "ToolInventor2025_Assembly_Btn6", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                    Nothing,
                                                                                    "Chuyển part thành sheet metal", ass1SmallIcon6, ass1LargeIcon6)
-            AddHandler assemblyBtn6.OnExecute, AddressOf Assembly.Buttons.part.Ass_Part_1.OnExecute
+            AddHandler assemblyBtn6.OnExecute, AddressOf Assembly.Buttons.Part.Ass_Part_1.OnExecute
             buttonsList.Add(assemblyBtn6)
 
             Dim assemblyBtn7 As ButtonDefinition = controlDefs.AddButtonDefinition("Combo part 1", "ToolInventor2025_Assembly_Btn7", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
@@ -263,11 +410,11 @@ Namespace ToolInventor2025
             '     buttonsList.Add(assemblyBtn8)
 
             Dim assemblyBtn9 As ButtonDefinition = controlDefs.AddButtonDefinition("Trải ALL Sheetmetal", "ToolInventor2025_Assembly_Btn9", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, ass1SmallIcon9, ass1LargeIcon9)
-            AddHandler assemblyBtn9.OnExecute, AddressOf Assembly.Buttons.part.Ass_Part_4.OnExecute
+            AddHandler assemblyBtn9.OnExecute, AddressOf Assembly.Buttons.Part.Ass_Part_4.OnExecute
             buttonsList.Add(assemblyBtn9)
 
             Dim assemblyBtn14 As ButtonDefinition = controlDefs.AddButtonDefinition("Save copy to replace part", "ToolInventor2025_Assembly_Btn14", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, ass1SmallIcon14, ass1LargeIcon14)
-            AddHandler assemblyBtn14.OnExecute, AddressOf Assembly.Buttons.part.Ass_Part_5.OnExecute
+            AddHandler assemblyBtn14.OnExecute, AddressOf Assembly.Buttons.Part.Ass_part_5.OnExecute
             buttonsList.Add(assemblyBtn14)
 
             Dim assemblyBtn12 As ButtonDefinition = controlDefs.AddButtonDefinition("Xoa mau ghi de len part", "ToolInventor2025_Assembly_Btn12", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, ass1SmallIcon12, ass1LargeIcon12)
