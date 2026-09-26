@@ -79,16 +79,12 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
 
             '--- Khớp chính xác ---
             Select Case l
-                Case "origin",
-                     "relationships",
-                     "representations",
-                     "end of features",
-                     "welds",
-                     "machining",
-                     "frame reference model",
-                     "substitutes",
-                     "reference skeleton",
-                     "folded model"
+                Case "origin", "relationships", "representations", "end of features", "welds", "part",
+                     "machining", "frame reference model", "substitutes", "reference skeleton", "folded model", "bulong", "iso 4032", "iso 4033", "iso 4034", "iso 4035",
+                     "con", "cai", "nut", "bolt", "screw", "washer", "pin", "clip", "spring", "ring", "seal", "gasket", "bearing", "bushing", "spacer", "retainer", "fastener", "hardware",
+                        "screwdriver", "wrench", "tool", "fixture", "jig", "clamp", "bracket", "support", "mount", "adapter", "connector", "coupling", "joint", "hinge", "latch",
+                        "lock", "catch", "handle", "knob", "lever", "pedal", "button", "switch", "valve", "hose", "duct", "dây", "belt", "gia do", "skf", "nsk", "timken", "fag", "ina", "koyo", "ntn", "schaeffler", "thk", "igus", "misumi", "misumi",
+                  "tam", "motor", "gối", "vòng", "ecu", "tang", "ma", "luoi", "long den", "dem venh", "vit", "nut", "con lan", "thep tam", "work plane", "plane", "Center Point", "solid"
                     Return True
             End Select
 
