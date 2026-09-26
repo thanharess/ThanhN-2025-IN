@@ -23,7 +23,7 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
         '
         '   ★ Khi cần dùng collapse → đổi thành False
         '============================================================
-        Private Const DISABLE_COLLAPSE As Boolean = False
+        Private Const DISABLE_COLLAPSE As Boolean = True
 
         Private Enum FrameTreatmentType
             Unknown = 0
@@ -69,7 +69,7 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
 
             Dim l As String = label.Trim().ToLowerInvariant()
 
-            '--- Bỏ hậu tố ":N" nếu có ---
+            '--- Bỏ hậu tố ":N" ---
             Dim idx As Integer = l.LastIndexOf(":"c)
             If idx > 0 Then
                 Dim tail As String = l.Substring(idx + 1)
@@ -77,21 +77,80 @@ Namespace ToolInventor2025.Assembly.Buttons.Frame
                 If Integer.TryParse(tail, n) Then l = l.Substring(0, idx).Trim()
             End If
 
-            '--- Khớp chính xác ---
+            '==========================================================
+            ' 1. KHỚP CHÍNH XÁC — node hệ thống Inventor
+            '==========================================================
             Select Case l
-                Case "origin", "relationships", "representations", "end of features", "welds", "part",
+                Case "origin",
+                     "relationships",
+                     "representations",
+                     "end of features",
+                     "welds",
+                     "machining",
+                     "frame reference model",
+                     "substitutes",
+                     "reference skeleton",
+                     "folded model",
+                     "center point",
+                     "work plane",
+                     "work axis",
+                     "work point"
+                    Return True
+            End Select
+
+            '==========================================================
+            ' 2. STARTSWITH — nhóm tiền tố cố định
+            '==========================================================
+            Dim fixedPrefixes() As String = {
+                "model states",
+                "sketch",
+                "reference skeleton",
+                "work plane",
+                "work axis",
+                "work point",
+                "plane ",
+                "plane:",
+                "axis ",
+                "axis:",
+                "solid "
+            }
+            For Each p As String In fixedPrefixes
+                If l.StartsWith(p) Then Return True
+            Next
+
+            '==========================================================
+            ' 3. STARTSWITH — mã tiêu chuẩn (ISO/DIN/JIS/GB/ANSI...)
+            '    Khớp cả "iso 4762 m16 x 50" vì chỉ cần bắt đầu bằng "iso "
+            '==========================================================
+            Dim stdPrefixes() As String = {
+                "origin", "relationships", "representations", "end of features", "welds", "part", "iso 4762", "iso 7089",
                      "machining", "frame reference model", "substitutes", "reference skeleton", "folded model", "bulong", "iso 4032", "iso 4033", "iso 4034", "iso 4035",
                      "con", "cai", "nut", "bolt", "screw", "washer", "pin", "clip", "spring", "ring", "seal", "gasket", "bearing", "bushing", "spacer", "retainer", "fastener", "hardware",
                         "screwdriver", "wrench", "tool", "fixture", "jig", "clamp", "bracket", "support", "mount", "adapter", "connector", "coupling", "joint", "hinge", "latch",
                         "lock", "catch", "handle", "knob", "lever", "pedal", "button", "switch", "valve", "hose", "duct", "dây", "belt", "gia do", "skf", "nsk", "timken", "fag", "ina", "koyo", "ntn", "schaeffler", "thk", "igus", "misumi", "misumi",
                   "tam", "motor", "gối", "vòng", "ecu", "tang", "ma", "luoi", "long den", "dem venh", "vit", "nut", "con lan", "thep tam", "work plane", "plane", "Center Point", "solid"
-                    Return True
-            End Select
+                              }
+            For Each p As String In stdPrefixes
+                If l.StartsWith(p) Then Return True
+            Next
 
-            '--- Khớp mềm ---
-            If l.StartsWith("model states") Then Return True
-            If l.StartsWith("sketch") Then Return True
-            If l.StartsWith("reference skeleton") Then Return True
+            '==========================================================
+            ' 4. CONTAINS — từ khóa vật tư phụ (bolt, nut, screw...)
+            '==========================================================
+            Dim keywords() As String = {
+                "bolt", "screw", "nut", "washer", "pin", "clip",
+                "spring", "ring", "seal", "gasket", "bearing",
+                "bushing", "spacer", "retainer", "fastener", "hardware",
+                "screwdriver", "wrench", "fixture", "jig", "clamp",
+                "adapter", "connector", "coupling", "hinge", "latch",
+                "handle", "knob", "lever", "pedal", "switch", "valve",
+                "hose", "duct", "belt", "motor",
+                "bulong", "bulông", "long đền", "vòng bi", "gối đỡ",
+                "vít", "đai ốc", "tấm", "lưới"
+            }
+            For Each kw As String In keywords
+                If l.Contains(kw) Then Return True
+            Next
 
             Return False
 
