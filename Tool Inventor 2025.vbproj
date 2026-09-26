@@ -460,13 +460,13 @@
 
   <ItemGroup>
     <Reference Include="Autodesk.iLogic.Runtime">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Inventor 2025\Bin\Autodesk.iLogic.Runtime.dll</HintPath>
+      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.iLogic.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.Inventor.Interop">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Inventor 2025\Bin\Autodesk.Inventor.Interop.dll</HintPath>
+      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\Autodesk.Inventor.Interop.dll</HintPath>
     </Reference>
     <Reference Include="stdole">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Inventor 2025\Bin\stdole.dll</HintPath>
+      <HintPath>D:\FILE CAI PHAN MEM\i\Inventor 2025\Inventor 2025\Bin\stdole.dll</HintPath>
     </Reference>
   </ItemGroup>
 
