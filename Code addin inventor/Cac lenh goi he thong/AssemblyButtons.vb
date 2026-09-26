@@ -229,86 +229,51 @@ Namespace ToolInventor2025
 
 
             '════════════════════════════════════════════════════════════════════
-            ' NÚT 28 — CONSTRAIN với POPUP MENU
-            ' Đăng ký popup vào registry, sẽ được tạo khi panel hình thành
+            ' POPUP CONSTRAIN
             '════════════════════════════════════════════════════════════════════
-
-            ' ─── 1. Tạo nút chính (dùng làm main button của popup) ───
-            Dim subBtn1a As ButtonDefinition = controlDefs.AddButtonDefinition("Suppress, Constrain, Ground", "ToolInventor2025_Assembly_Sub1a",
-                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, "Suppress, constrain, Ground tự động", ass1SmallIcon1, ass1LargeIcon1)
+            Dim subBtn1a As ButtonDefinition = controlDefs.AddButtonDefinition(
+                "Suppress, Constrain, Ground", "ToolInventor2025_Assembly_Sub1a",
+                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                "Suppress, constrain, Ground tự động",
+                ass1SmallIcon1, ass1LargeIcon1)
             AddHandler subBtn1a.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1a.OnExecute
 
-            ' ─── 2. Tạo các nút con ───
-            Dim subBtn1b As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain Keep Position", "ToolInventor2025_Assembly_Sub1b", CommandTypesEnum.kShapeEditCmdType,
-                addInClientID, Nothing, "Giữ nguyên vị trí các cụm & gán constrain tự động", ass1SmallIcon2, ass1LargeIcon2)
+            Dim subBtn1b As ButtonDefinition = controlDefs.AddButtonDefinition(
+                "Constrain Keep Position", "ToolInventor2025_Assembly_Sub1b",
+                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                "Giữ nguyên vị trí các cụm & gán constrain tự động",
+                ass1SmallIcon2, ass1LargeIcon2)
             AddHandler subBtn1b.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1b.OnExecute
 
-            Dim subBtn1c As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain về gốc 2 chi tiết", "ToolInventor2025_Assembly_Sub1c", CommandTypesEnum.kShapeEditCmdType,
-                addInClientID, Nothing, "Constrain về gốc tọa độ của chi tiết chọn đầu tiên", ass1SmallIcon3, ass1LargeIcon3)
+            Dim subBtn1c As ButtonDefinition = controlDefs.AddButtonDefinition(
+                "Constrain về gốc 2 chi tiết", "ToolInventor2025_Assembly_Sub1c",
+                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                "Constrain về gốc tọa độ của chi tiết chọn đầu tiên",
+                ass1SmallIcon3, ass1LargeIcon3)
             AddHandler subBtn1c.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1c.OnExecute
 
-            Dim subBtn1d As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain All to Select", "ToolInventor2025_Assembly_Sub1d", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
-                "Constrain tất cả về gốc tọa độ chi tiết được chọn", ass1SmallIcon4, ass1LargeIcon4)
+            Dim subBtn1d As ButtonDefinition = controlDefs.AddButtonDefinition(
+                "Constrain All to Select", "ToolInventor2025_Assembly_Sub1d",
+                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                "Constrain tất cả về gốc tọa độ chi tiết được chọn",
+                ass1SmallIcon4, ass1LargeIcon4)
             AddHandler subBtn1d.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1d.OnExecute
 
-            Dim subBtn1e As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa all Constraint lỗi", "ToolInventor2025_Assembly_Sub1e", CommandTypesEnum.kShapeEditCmdType,
-                addInClientID, Nothing, "Xóa tất cả constrain lỗi trong Assembly", ass1SmallIcon27, ass1LargeIcon27)
+            Dim subBtn1e As ButtonDefinition = controlDefs.AddButtonDefinition(
+                "Xóa all Constraint lỗi", "ToolInventor2025_Assembly_Sub1e",
+                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                "Xóa tất cả constrain lỗi trong Assembly",
+                ass1SmallIcon27, ass1LargeIcon27)
             AddHandler subBtn1e.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1e.OnExecute
 
-            ' ─── 3. Đăng ký popup vào registry ───
-            Dim pd As New PopupDef()
-            pd.SubButtons.Add(subBtn1a)     ' ← PHẦN TỬ ĐẦU = nút chính
-            pd.SubButtons.Add(subBtn1b)
-            pd.SubButtons.Add(subBtn1c)
-            pd.SubButtons.Add(subBtn1d)
-            pd.SubButtons.Add(subBtn1e)
+            Dim pd As New PopupRegistry.PopupDef()
+            pd.SubButtons.Add(subBtn1a)     ' ← Nút chính
+            pd.SubButtons.Add(subBtn1b)     ' ← Sub 1
+            pd.SubButtons.Add(subBtn1c)     ' ← Sub 2
+            pd.SubButtons.Add(subBtn1d)     ' ← Sub 3
+            pd.SubButtons.Add(subBtn1e)     ' ← Sub 4
 
-            If Not PendingPopups.ContainsKey("ToolInventor2025_AssemblyPanel") Then
-                PendingPopups("ToolInventor2025_AssemblyPanel") = New List(Of PopupDef)
-            End If
-            PendingPopups("ToolInventor2025_AssemblyPanel").Add(pd)
-
-
-
-            '════════════════════════════════════════════════════════════════════
-            ' NÚT 28 — CONSTRAIN với POPUP MENU
-            ' Đăng ký popup vào registry, sẽ được tạo khi panel hình thành
-            '════════════════════════════════════════════════════════════════════
-
-            ' ─── 1. Tạo nút chính (dùng làm main button của popup) ───
-            Dim subBtn2a As ButtonDefinition = controlDefs.AddButtonDefinition("Suppress, Constrain, Ground", "ToolInventor2025_Assembly_Sub2a",
-                CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, "Suppress, constrain, Ground tự động", ass1SmallIcon1, ass1LargeIcon1)
-            AddHandler subBtn2a.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1a.OnExecute
-
-            ' ─── 2. Tạo các nút con ───
-            Dim subBtn2b As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain Keep Position", "ToolInventor2025_Assembly_Sub2b", CommandTypesEnum.kShapeEditCmdType,
-                addInClientID, Nothing, "Giữ nguyên vị trí các cụm & gán constrain tự động", ass1SmallIcon2, ass1LargeIcon2)
-            AddHandler subBtn2b.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1b.OnExecute
-
-            Dim subBtn2c As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain về gốc 2 chi tiết", "ToolInventor2025_Assembly_Sub2c", CommandTypesEnum.kShapeEditCmdType,
-                addInClientID, Nothing, "Constrain về gốc tọa độ của chi tiết chọn đầu tiên", ass1SmallIcon3, ass1LargeIcon3)
-            AddHandler subBtn2c.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1c.OnExecute
-
-            Dim subBtn2d As ButtonDefinition = controlDefs.AddButtonDefinition("Constrain All to Select", "ToolInventor2025_Assembly_Sub2d", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
-                "Constrain tất cả về gốc tọa độ chi tiết được chọn", ass1SmallIcon4, ass1LargeIcon4)
-            AddHandler subBtn2d.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1d.OnExecute
-
-            Dim subBtn2e As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa all Constraint lỗi", "ToolInventor2025_Assembly_Sub2e", CommandTypesEnum.kShapeEditCmdType,
-                addInClientID, Nothing, "Xóa tất cả constrain lỗi trong Assembly", ass1SmallIcon27, ass1LargeIcon27)
-            AddHandler subBtn2e.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1e.OnExecute
-
-            ' ─── 3. Đăng ký popup vào registry ───
-            Dim pd1 As New PopupDef()
-            pd1.SubButtons.Add(subBtn2a)     ' ← PHẦN TỬ ĐẦU = nút chính
-            pd1.SubButtons.Add(subBtn2b)
-            pd1.SubButtons.Add(subBtn2c)
-            pd1.SubButtons.Add(subBtn2d)
-            pd1.SubButtons.Add(subBtn2e)
-
-            If Not PendingPopups.ContainsKey("ToolInventor2025_AssemblyPanel") Then
-                PendingPopups("ToolInventor2025_AssemblyPanel") = New List(Of PopupDef)
-            End If
-            PendingPopups("ToolInventor2025_AssemblyPanel").Add(pd1)
+            PopupRegistry.RegisterPopup("ToolInventor2025_AssemblyPanel", pd)
 
 
 
