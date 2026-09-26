@@ -169,6 +169,25 @@
   <None Remove="Code addin inventor\Images\Part\i8.bmp" />
   <None Remove="Code addin inventor\Images\Part\i9 1.bmp" />
   <None Remove="Code addin inventor\Images\Part\i9.bmp" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Balloon.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Center mark.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Datum.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\dIM.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Feature control.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Hatch.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Hole.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\ID.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Layer.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Leader.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\M cắt.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Partlist.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Style 2mm.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Style 3mm.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Style 5mm.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Style tiêu chuẩn.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Suface.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Text.styxml" />
+  <None Remove="Code addin inventor\Item addin\Drawing style\Weld.styxml" />
   <None Remove="Code addin inventor\Item addin\Màu sắc 1.adsklib" />
 </ItemGroup>
 <ItemGroup>
@@ -422,6 +441,63 @@
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </Content>
   <Content Include="Code addin inventor\Images\Part\i9.bmp">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Balloon.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Center mark.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Datum.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\dIM.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Feature control.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Hatch.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Hole.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\ID.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Layer.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Leader.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\M cắt.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Partlist.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Style 2mm.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Style 3mm.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Style 5mm.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Style tiêu chuẩn.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Suface.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Text.styxml">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Item addin\Drawing style\Weld.styxml">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </Content>
   <Content Include="Code addin inventor\Item addin\Màu sắc 1.adsklib">

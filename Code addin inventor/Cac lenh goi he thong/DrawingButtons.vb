@@ -257,7 +257,11 @@ Namespace ToolInventor2025
 
             buttonsList.Add(DrawingBtn16)
 
+            Dim DrawingBtn23 As ButtonDefinition = controlDefs.AddButtonDefinition("Mở vị trí Lưu File", "ToolInventor2025_Drawing_Btn23", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
+                                                                                  "Mở vị trí lưu file", Dra1SmallIcon23, Dra1LargeIcon23)
+            AddHandler DrawingBtn23.OnExecute, AddressOf Drawing.Buttons.Style.Drw_Style_Import.OnExecute
 
+            buttonsList.Add(DrawingBtn23)
 
         End Sub
     End Class
