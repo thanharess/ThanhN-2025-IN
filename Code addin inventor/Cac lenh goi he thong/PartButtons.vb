@@ -186,7 +186,7 @@ Namespace ToolInventor2025
                                                                                "Part Action 9" & vbCrLf & "Mô tả: (chỉnh sửa) Action 9 cho Part.",
                                                                                "Tooltip: Part Action 9 (edit)", part9SmallIcon, part9LargeIcon)
             AddHandler partBtn9.OnExecute, AddressOf Part.Buttons.Button9.OnExecute
-            '   buttonsList.Add(partBtn9)
+            '  buttonsList.Add(partBtn9)
 
             Dim partBtn10 As ButtonDefinition = controlDefs.AddButtonDefinition("Part Action 10", "ToolInventor2025_Part_Btn10", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                  "Part Action 10" & vbCrLf & "Mô tả: (chỉnh sửa) Action 10 cho Part.",
@@ -212,11 +212,6 @@ Namespace ToolInventor2025
             AddHandler partBtn13.OnExecute, AddressOf Part.Buttons.Button13.OnExecute
             '  buttonsList.Add(partBtn13)
 
-            Dim partBtn14 As ButtonDefinition = controlDefs.AddButtonDefinition("Part Action 14", "ToolInventor2025_Part_Btn14", CommandTypesEnum.kShapeEditCmdType, addInClientID,
-                                                                                "Part Action 14" & vbCrLf & "Mô tả: (chỉnh sửa) Action 14 cho Part.",
-                                                                                "Tooltip: Part Action 14 (edit)", part14SmallIcon, part14LargeIcon)
-            AddHandler partBtn14.OnExecute, AddressOf Part.Buttons.Button14.OnExecute
-            ' buttonsList.Add(partBtn14)
 
 
 
@@ -229,6 +224,14 @@ Namespace ToolInventor2025
                                                                                "Mở vị trí lưu file", part15SmallIcon, part15LargeIcon)
             AddHandler partBtn15.OnExecute, AddressOf Toolngoai.Vitrifile.Vitrifile
             buttonsList.Add(partBtn15)
+
+            Dim partBtn14 As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa Link OLE", "ToolInventor2025_Part_Btn14", CommandTypesEnum.kShapeEditCmdType, addInClientID,
+                                                                                "Xóa Link OLE" & vbCrLf & "Mô tả: (chỉnh sửa) Xóa tất cả các liên kết OLE trong tài liệu.",
+                                                                                "Tooltip: Xóa Link OLE (edit)", part14SmallIcon, part14LargeIcon)
+            AddHandler partBtn14.OnExecute, AddressOf Toolngoai.delete_link_OLE.OnExecute
+            buttonsList.Add(partBtn14)
+
+
         End Sub
     End Class
 End Namespace

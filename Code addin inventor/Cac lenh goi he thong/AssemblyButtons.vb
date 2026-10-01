@@ -406,10 +406,6 @@ Namespace ToolInventor2025
 
 
 
-            Dim assemblyBtn20 As ButtonDefinition = controlDefs.AddButtonDefinition("5", "ToolInventor2025_Assembly_Btn20", CommandTypesEnum.kShapeEditCmdType, addInClientID,
-                                                                                   Nothing, "", ass1SmallIcon20, ass1LargeIcon20)
-            'AddHandler assemblyBtn20.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.ass_15.OnExecute
-            ' buttonsList.Add(assemblyBtn20)
 
 
 
@@ -442,12 +438,7 @@ Namespace ToolInventor2025
             '  buttonsList.Add(assemblyBtn24)
 
 
-            Dim assemblyBtn25 As ButtonDefinition = controlDefs.AddButtonDefinition("Drawing top Ass, Part", "ToolInventor2025_Assembly_Btn25", CommandTypesEnum.kShapeEditCmdType, addInClientID,
-                                                                            Nothing, "Auto drawing cho Assembly & Part Top lever.", ass1SmallIcon25, ass1LargeIcon25)
-            '  AddHandler assemblyBtn25.OnExecute, AddressOf Assembly.Buttons.AutoCreateDrawing.AutoDrawingASSpartTopLV.OnExecute
-            '  buttonsList.Add(assemblyBtn25)
 
-            ''''''''''''''======================================
 
 #End Region
 #Region "Frame"
@@ -480,7 +471,21 @@ Namespace ToolInventor2025
                                                                                    Nothing, "Mở vị trí lưu file", ass1SmallIcon19, ass1LargeIcon19)
             AddHandler assemblyBtn19.OnExecute, AddressOf Toolngoai.Vitrifile.Vitrifile
             buttonsList.Add(assemblyBtn19)
+
+
+            Dim assemblyBtn20 As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa Link OLE", "ToolInventor2025_Assembly_Btn20", CommandTypesEnum.kShapeEditCmdType, addInClientID,
+                                                                                   Nothing, "Xóa tất cả các liên kết OLE trong tài liệu", ass1SmallIcon20, ass1LargeIcon20)
+            AddHandler assemblyBtn20.OnExecute, AddressOf Toolngoai.delete_link_OLE.OnExecute
+            buttonsList.Add(assemblyBtn20)
+
 #End Region
+
+            Dim assemblyBtn25 As ButtonDefinition = controlDefs.AddButtonDefinition("View Representation", "ToolInventor2025_Assembly_Btn25", CommandTypesEnum.kShapeEditCmdType, addInClientID,
+                                                                            Nothing, "Thay đổi View Representation Các cụm lắp", ass1SmallIcon25, ass1LargeIcon25)
+            AddHandler assemblyBtn25.OnExecute, AddressOf Assembly.Buttons.ASS_View.View_Representation.OnExecute
+            buttonsList.Add(assemblyBtn25)
+
+            ''''''''''''''======================================
 
 
 
