@@ -5,7 +5,7 @@ Imports Inventor
 Imports System.Windows.Forms
 Imports System.Drawing
 
-Namespace ToolInventor2020.Drawing.Buttons.DrawView
+Namespace ToolInventor2025.Drawing.Buttons.DrawView
 
     Public Module Draw_Rename_View
 
@@ -50,7 +50,7 @@ Namespace ToolInventor2020.Drawing.Buttons.DrawView
                     Return
                 End If
 
-                ' Tắt update + silent để tăng tốc tối đa
+                ' Tắt update tạm thời để tăng tốc
                 Dim oldSilent As Boolean = g_inventorApplication.SilentOperation
                 g_inventorApplication.SilentOperation = True
 
@@ -91,7 +91,7 @@ Namespace ToolInventor2020.Drawing.Buttons.DrawView
         End Sub
 
         '==========================================================
-        ' RENAME 1 SHEET – dùng indexed loop
+        ' RENAME 1 SHEET – indexed loop
         '==========================================================
         Private Function RenameViewsOnSheet(ByVal oSheet As Sheet,
                                             ByVal startLetter As String,
@@ -169,7 +169,7 @@ Namespace ToolInventor2020.Drawing.Buttons.DrawView
         End Function
 
         '==========================================================
-        ' KIỂM TRA BỎ QUA – nhận ViewType (nhẹ hơn)
+        ' KIỂM TRA BỎ QUA – nhận ViewType
         '==========================================================
         Private Function ShouldSkipView(ByVal viewType As DrawingViewTypeEnum,
                                         ByVal skipBase As Boolean,
@@ -243,7 +243,7 @@ Namespace ToolInventor2020.Drawing.Buttons.DrawView
                 _frm.Font = New Font("Segoe UI", 9)
 
                 Dim lbl1 As New Label() With {.Text = "Chữ cái bắt đầu (A, B, AA, AB...):", .Location = New System.Drawing.Point(20, 10), .AutoSize = True}
-                _txtLetter = New System.Windows.Forms.TextBox() With {.Text = "A", .Location = New System.Drawing.Point(20, 40), .Width = 80, .CharacterCasing = System.Windows.Forms.CharacterCasing.Upper}
+                _txtLetter = New System.Windows.Forms.TextBox() With {.Text = "A", .Location = New System.Drawing.Point(20, 40), .Width = 80, .CharacterCasing = CharacterCasing.Upper}
 
                 Dim lbl2 As New Label() With {.Text = "Phạm vi:", .Location = New System.Drawing.Point(20, 70), .AutoSize = True}
                 _cboScope = New ComboBox() With {.Location = New System.Drawing.Point(20, 98), .Width = 340, .DropDownStyle = ComboBoxStyle.DropDownList}
@@ -279,7 +279,7 @@ Namespace ToolInventor2020.Drawing.Buttons.DrawView
                 _frm.CancelButton = btnCancel
             End If
 
-            ' Reset giá trị mặc định
+            ' Reset giá trị mặc định mỗi lần mở
             _txtLetter.Text = "A"
             _cboScope.SelectedIndex = 0
             _chkResetPerSheet.Checked = True
