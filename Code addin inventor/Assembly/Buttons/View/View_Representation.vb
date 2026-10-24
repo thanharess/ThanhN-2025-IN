@@ -1,7 +1,6 @@
 ﻿Imports System.Windows.Forms
 Imports System.Runtime.InteropServices
 Imports Inventor
-
 ' Alias để tránh xung đột System.Drawing <-> Inventor
 Imports DrColor = System.Drawing.Color
 Imports DrPoint = System.Drawing.Point
@@ -20,7 +19,6 @@ Imports DrSmoothingMode = System.Drawing.Drawing2D.SmoothingMode
 Imports DrTextRenderingHint = System.Drawing.Text.TextRenderingHint
 
 Namespace ToolInventor2025.Assembly.Buttons.ASS_View
-
     Public Module View_Representation
 
         ' ============================================================
@@ -52,11 +50,9 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             End Try
             If hr <> 0 Then hr = CLSIDFromProgID("Inventor.Application", clsid)
             If hr <> 0 Then Throw New Exception("Không tìm thấy CLSID của Inventor.Application")
-
             Dim obj As Object = Nothing
             hr = GetActiveObject(clsid, IntPtr.Zero, obj)
             If hr <> 0 Then Throw New Exception("Không tìm thấy phiên bản Inventor đang chạy")
-
             Return CType(obj, Inventor.Application)
         End Function
 
@@ -101,7 +97,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             frm.Size = New DrSize(width, height)
             frm.StartPosition = FormStartPosition.CenterScreen
             frm.FormBorderStyle = FormBorderStyle.None
-            frm.BackColor = DrColor.FromArgb(250, 251, 252)   ' #FAFBFC
+            frm.BackColor = DrColor.FromArgb(250, 251, 252)
             frm.Padding = New Padding(1)
             frm.TopMost = True
             Using borderPath As DrGraphicsPath = GetRoundedRectPath(
@@ -186,7 +182,6 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
         '  ENTRY POINT
         ' ============================================================
         Public Sub OnExecute(ByVal Context As NameValueMap)
-
             Dim invApp As Inventor.Application
             Try
                 invApp = GetInventorInstance()
@@ -198,7 +193,6 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             End Try
 
             Dim oDoc As Document = invApp.ActiveDocument
-
             If oDoc Is Nothing OrElse oDoc.DocumentType <> DocumentTypeEnum.kAssemblyDocumentObject Then
                 MessageBox.Show("Chỉ hỗ trợ file Assembly (.iam)!", "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -224,13 +218,11 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             invApp.SilentOperation = True
             Try
                 Select Case selectedFunc
-
                     Case 1
                         Dim viewName As String = ShowInputForm(
                             "Kích hoạt View Representation",
                             "Nhập tên View Representation cần kích hoạt:",
                             "[Primary]")
-
                         If String.IsNullOrEmpty(viewName) Then Return
 
                         If isAllLevel Then
@@ -252,94 +244,113 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                         Else
                             ActivateView_TopLevel(oAsmDoc, "Default")
                         End If
-
                 End Select
-
             Catch ex As Exception
                 MessageBox.Show("Lỗi: " & ex.Message, "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
             Finally
                 invApp.SilentOperation = False
             End Try
-
         End Sub
 
         '=================================================
         ' KÍCH HOẠT VIEW - TOP LEVEL
         '=================================================
         Private Sub ActivateView_TopLevel(ByVal oAsmDoc As AssemblyDocument, ByVal viewName As String)
+            Dim found As Boolean = ActivateViewInDoc(oAsmDoc, viewName)
 
-            Dim oRepMgr As RepresentationsManager = oAsmDoc.ComponentDefinition.RepresentationsManager
-            Dim found As Boolean = False
-
-            For Each oView As DesignViewRepresentation In oRepMgr.DesignViewRepresentations
-                If String.Compare(oView.Name, viewName, True) = 0 Then
-                    oView.Activate()
-                    found = True
-                    MessageBox.Show("Đã kích hoạt View """ & oView.Name & """ (Top Level)",
-                                    "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                    Exit For
-                End If
-            Next
-
-            If Not found AndAlso String.Compare(viewName, "Default", True) = 0 Then
-                For Each oView As DesignViewRepresentation In oRepMgr.DesignViewRepresentations
-                    If oView.Name = "[Primary]" Then
-                        oView.Activate()
-                        found = True
-                        MessageBox.Show("Không có View Default → đã chuyển về [Primary] (Top Level)",
-                                        "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                        Exit For
-                    End If
-                Next
+            If found Then
+                MessageBox.Show("Đã kích hoạt View """ & viewName & """ (Top Level)",
+                                "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Else
+                MessageBox.Show("Không tìm thấy View: " & viewName & vbCrLf &
+                                "Đã thử fallback [Primary] nếu là Default.",
+                                "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             End If
-
-            If Not found Then
-                MessageBox.Show("Không tìm thấy View: " & viewName, "Thanh N",
-                                MessageBoxButtons.OK, MessageBoxIcon.Warning)
-            End If
-
         End Sub
 
         '=================================================
-        ' KÍCH HOẠT VIEW - ALL LEVEL (đệ quy)
+        ' KÍCH HOẠT VIEW - ALL LEVEL (đệ quy + SetDesignViewRepresentation)
         '=================================================
         Private Sub ActivateView_AllLevel(ByVal oAsmDoc As AssemblyDocument, ByVal viewName As String)
-
             Dim countSuccess As Integer = 0
             Dim countFail As Integer = 0
 
+            ' Đệ quy theo cây Occurrence (quan trọng để khắc phục [Primary] ẩn view con)
+            ProcessAssemblyRecursive(oAsmDoc, viewName, countSuccess, countFail)
+
+            MessageBox.Show("Đã xử lý xong (All Level)!" & vbCrLf & vbCrLf &
+                            "Thành công: " & countSuccess & vbCrLf &
+                            "Không tìm thấy / Lỗi: " & countFail & vbCrLf & vbCrLf &
+                            "Đã SetDesignViewRepresentation (Associative) trên tất cả occurrence.",
+                            "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        End Sub
+
+        '=================================================
+        ' ĐỆ QUY THEO CÂY OCCURRENCE + SET VIEW TRÊN OCCURRENCE
+        '=================================================
+        Private Sub ProcessAssemblyRecursive(ByVal oAsmDoc As AssemblyDocument,
+                                             ByVal viewName As String,
+                                             ByRef countSuccess As Integer,
+                                             ByRef countFail As Integer)
+
+            ' 1. Activate trong document hiện tại
             If ActivateViewInDoc(oAsmDoc, viewName) Then
                 countSuccess += 1
             Else
                 countFail += 1
             End If
 
-            For Each oRefDoc As Document In oAsmDoc.AllReferencedDocuments
+            ' 2. Duyệt tất cả occurrence
+            For Each oOcc As ComponentOccurrence In oAsmDoc.ComponentDefinition.Occurrences
                 Try
-                    If oRefDoc.DocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
-                        If ActivateViewInDoc(CType(oRefDoc, AssemblyDocument), viewName) Then
-                            countSuccess += 1
-                        Else
-                            countFail += 1
-                        End If
+                    If oOcc.Suppressed Then Continue For
+                    If TypeOf oOcc.Definition Is VirtualComponentDefinition Then Continue For
+                    If TypeOf oOcc.Definition Is WeldsComponentDefinition Then Continue For
+
+                    ' Chỉ xử lý Sub-Assembly
+                    If oOcc.DefinitionDocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
+
+                        ' === KEY FIX: Set Design View trên occurrence (Associative = True) ===
+                        ' Giải quyết trường hợp Top Level đang [Primary] → view con bị ẩn
+                        Try
+                            oOcc.SetDesignViewRepresentation(viewName, , True)
+                        Catch
+                            ' Fallback nếu viewName không tồn tại trong sub
+                            Try
+                                oOcc.SetDesignViewRepresentation("Default", , True)
+                            Catch
+                                Try
+                                    oOcc.SetDesignViewRepresentation("[Primary]", , True)
+                                Catch
+                                End Try
+                            End Try
+                        End Try
+
+                        ' Đệ quy vào sub-assembly
+                        Dim subAsm As AssemblyDocument = CType(oOcc.Definition.Document, AssemblyDocument)
+                        ProcessAssemblyRecursive(subAsm, viewName, countSuccess, countFail)
                     End If
+
                 Catch
                     countFail += 1
                 End Try
             Next
 
-            MessageBox.Show("Đã xử lý xong (All Level)!" & vbCrLf & vbCrLf &
-                            "Thành công: " & countSuccess & vbCrLf &
-                            "Không tìm thấy / Lỗi: " & countFail,
-                            "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
-
+            Try
+                oAsmDoc.Update2(True)
+            Catch
+            End Try
         End Sub
 
+        '=================================================
+        ' HÀM PHỤ: KÍCH HOẠT VIEW TRONG 1 ASSEMBLY DOCUMENT
+        '=================================================
         Private Function ActivateViewInDoc(ByVal oAsmDoc As AssemblyDocument, ByVal viewName As String) As Boolean
             Try
                 Dim oRepMgr As RepresentationsManager = oAsmDoc.ComponentDefinition.RepresentationsManager
 
+                ' Tìm đúng tên (không phân biệt hoa thường)
                 For Each oView As DesignViewRepresentation In oRepMgr.DesignViewRepresentations
                     If String.Compare(oView.Name, viewName, True) = 0 Then
                         oView.Activate()
@@ -347,14 +358,16 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                     End If
                 Next
 
+                ' Fallback: Default → [Primary]
                 If String.Compare(viewName, "Default", True) = 0 Then
                     For Each oView As DesignViewRepresentation In oRepMgr.DesignViewRepresentations
-                        If oView.Name = "[Primary]" Then
+                        If String.Compare(oView.Name, "[Primary]", True) = 0 Then
                             oView.Activate()
                             Return True
                         End If
                     Next
                 End If
+
             Catch
             End Try
             Return False
@@ -364,9 +377,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
         '  FORM CHỌN CHỨC NĂNG
         ' ============================================================
         Private Function ShowFunctionForm() As Integer
-
             _selectedMode = 0
-
             Dim frm As New ModernForm()
             frm.Text = "View Representation"
             PrepareModernForm(frm, 480, 360)
@@ -396,20 +407,16 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
 
             Dim btnCancel As Button = AddCancelButton(frm)
             frm.CancelButton = btnCancel
-
             frm.ActiveControl = btn1
             frm.ShowDialog()
             Return _selectedMode
-
         End Function
 
         ' ============================================================
         '  FORM CHỌN PHẠM VI
         ' ============================================================
         Private Function ShowScopeForm() As Integer
-
             _selectedMode = 0
-
             Dim frm As New ModernForm()
             frm.Text = "Chọn phạm vi áp dụng"
             PrepareModernForm(frm, 480, 290)
@@ -424,7 +431,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             frm.Controls.Add(btn1)
 
             Dim btn2 As New ModernButton()
-            btn2.SetContent("🔄", "All Level", "Đệ quy toàn bộ Sub-Assembly")
+            btn2.SetContent("🔄", "All Level", "Đệ quy toàn bộ + Set Occurrence (Associative)")
             btn2.Location = New DrPoint(24, 148)
             btn2.Tag = 2
             AddHandler btn2.Click, AddressOf ModeButton_Click
@@ -432,20 +439,16 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
 
             Dim btnCancel As Button = AddCancelButton(frm)
             frm.CancelButton = btnCancel
-
             frm.ActiveControl = btn1
             frm.ShowDialog()
             Return _selectedMode
-
         End Function
 
         ' ============================================================
         '  FORM NHẬP CHUỖI – THAY THẾ InputBox
         ' ============================================================
         Private Function ShowInputForm(title As String, prompt As String, defaultValue As String) As String
-
             Dim result As String = Nothing
-
             Dim frm As New ModernForm()
             frm.Text = title
             PrepareModernForm(frm, 440, 210)
@@ -485,14 +488,11 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             frm.Controls.Add(btnOK)
 
             Dim btnCancel As Button = AddCancelButton(frm)
-
             frm.AcceptButton = btnOK
             frm.CancelButton = btnCancel
             frm.ActiveControl = txt
-
             frm.ShowDialog()
             Return result
-
         End Function
 
         ' ============================================================
@@ -514,7 +514,6 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
         ' ============================================================
         Private Class ModernForm
             Inherits Form
-
             Protected Overrides ReadOnly Property CreateParams As CreateParams
                 Get
                     Dim cp As CreateParams = MyBase.CreateParams
@@ -529,7 +528,6 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
         ' ============================================================
         Private Class ModernButton
             Inherits Control
-
             Private _icon As String = ""
             Private _title As String = ""
             Private _desc As String = ""
@@ -582,7 +580,6 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                 g.TextRenderingHint = DrTextRenderingHint.ClearTypeGridFit
 
                 Dim rect As New DrRectangle(0, 0, Me.Width - 1, Me.Height - 1)
-
                 Using path As DrGraphicsPath = GetRoundedRectPath(rect, 8)
                     Dim backColor As DrColor = If(_hover,
                                                    DrColor.FromArgb(239, 246, 255),
