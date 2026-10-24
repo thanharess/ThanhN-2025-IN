@@ -192,7 +192,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                 invApp = GetInventorInstance()
             Catch ex As Exception
                 MessageBox.Show("Không thể kết nối đến Inventor. Hãy chắc chắn Inventor đang chạy." & vbCrLf &
-                                ex.Message, "Visual Studio",
+                                ex.Message, "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Return
             End Try
@@ -200,7 +200,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             Dim oDoc As Document = invApp.ActiveDocument
 
             If oDoc Is Nothing OrElse oDoc.DocumentType <> DocumentTypeEnum.kAssemblyDocumentObject Then
-                MessageBox.Show("Chỉ hỗ trợ file Assembly (.iam)!", "Visual Studio",
+                MessageBox.Show("Chỉ hỗ trợ file Assembly (.iam)!", "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
@@ -229,7 +229,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                         Dim viewName As String = ShowInputForm(
                             "Kích hoạt View Representation",
                             "Nhập tên View Representation cần kích hoạt:",
-                            "Master")
+                            "[Primary]")
 
                         If String.IsNullOrEmpty(viewName) Then Return
 
@@ -241,9 +241,9 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
 
                     Case 2
                         If isAllLevel Then
-                            ActivateView_AllLevel(oAsmDoc, "Master")
+                            ActivateView_AllLevel(oAsmDoc, "[Primary]")
                         Else
-                            ActivateView_TopLevel(oAsmDoc, "Master")
+                            ActivateView_TopLevel(oAsmDoc, "[Primary]")
                         End If
 
                     Case 3
@@ -256,7 +256,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                 End Select
 
             Catch ex As Exception
-                MessageBox.Show("Lỗi: " & ex.Message, "Visual Studio",
+                MessageBox.Show("Lỗi: " & ex.Message, "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
             Finally
                 invApp.SilentOperation = False
@@ -277,25 +277,25 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                     oView.Activate()
                     found = True
                     MessageBox.Show("Đã kích hoạt View """ & oView.Name & """ (Top Level)",
-                                    "Visual Studio", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                                    "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
                     Exit For
                 End If
             Next
 
             If Not found AndAlso String.Compare(viewName, "Default", True) = 0 Then
                 For Each oView As DesignViewRepresentation In oRepMgr.DesignViewRepresentations
-                    If oView.Name = "Master" Then
+                    If oView.Name = "[Primary]" Then
                         oView.Activate()
                         found = True
-                        MessageBox.Show("Không có View Default → đã chuyển về Master (Top Level)",
-                                        "Visual Studio", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                        MessageBox.Show("Không có View Default → đã chuyển về [Primary] (Top Level)",
+                                        "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
                         Exit For
                     End If
                 Next
             End If
 
             If Not found Then
-                MessageBox.Show("Không tìm thấy View: " & viewName, "Visual Studio",
+                MessageBox.Show("Không tìm thấy View: " & viewName, "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
             End If
 
@@ -332,7 +332,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             MessageBox.Show("Đã xử lý xong (All Level)!" & vbCrLf & vbCrLf &
                             "Thành công: " & countSuccess & vbCrLf &
                             "Không tìm thấy / Lỗi: " & countFail,
-                            "Visual Studio", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                            "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
         End Sub
 
@@ -349,7 +349,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
 
                 If String.Compare(viewName, "Default", True) = 0 Then
                     For Each oView As DesignViewRepresentation In oRepMgr.DesignViewRepresentations
-                        If oView.Name = "Master" Then
+                        If oView.Name = "[Primary]" Then
                             oView.Activate()
                             Return True
                         End If
@@ -381,14 +381,14 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             frm.Controls.Add(btn1)
 
             Dim btn2 As New ModernButton()
-            btn2.SetContent("🏠", "Về View Master", "Chuyển Assembly về View Master")
+            btn2.SetContent("🏠", "Về View [Primary]", "Chuyển Assembly về View [Primary]")
             btn2.Location = New DrPoint(24, 148)
             btn2.Tag = 2
             AddHandler btn2.Click, AddressOf ModeButton_Click
             frm.Controls.Add(btn2)
 
             Dim btn3 As New ModernButton()
-            btn3.SetContent("📋", "Về View Default", "Chuyển về Default (tự fallback Master)")
+            btn3.SetContent("📋", "Về View Default", "Chuyển về Default (tự fallback [Primary])")
             btn3.Location = New DrPoint(24, 216)
             btn3.Tag = 3
             AddHandler btn3.Click, AddressOf ModeButton_Click

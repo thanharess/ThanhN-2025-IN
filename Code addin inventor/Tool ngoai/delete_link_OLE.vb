@@ -95,21 +95,21 @@ Namespace ToolInventor2025.Toolngoai
                 invApp = GetInventorInstance()
             Catch ex As Exception
                 MessageBox.Show("Không thể kết nối đến Inventor. Hãy chắc chắn Inventor đang chạy." & vbCrLf &
-                                ex.Message, "Visual Studio", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                ex.Message, "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Return
             End Try
 
             Dim oDoc As Document = invApp.ActiveDocument
 
             If oDoc Is Nothing Then
-                MessageBox.Show("Không có tài liệu đang mở!", "Visual Studio",
+                MessageBox.Show("Không có tài liệu đang mở!", "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
 
             If oDoc.DocumentType <> DocumentTypeEnum.kPartDocumentObject AndAlso
                oDoc.DocumentType <> DocumentTypeEnum.kAssemblyDocumentObject Then
-                MessageBox.Show("Chỉ hỗ trợ file Part (.ipt) hoặc Assembly (.iam)!", "Visual Studio",
+                MessageBox.Show("Chỉ hỗ trợ file Part (.ipt) hoặc Assembly (.iam)!", "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
@@ -134,9 +134,9 @@ Namespace ToolInventor2025.Toolngoai
                                     "Excel Tables đã xóa: " & countExcel & vbCrLf &
                                     "Derived Parameters đã xóa: " & countDerived & vbCrLf &
                                     "OLE Links đã xóa: " & countOLE,
-                                    "Visual Studio", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                                    "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Catch ex As Exception
-                    MessageBox.Show("Lỗi: " & ex.Message, "Visual Studio",
+                    MessageBox.Show("Lỗi: " & ex.Message, "Thanh N",
                                     MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Finally
                     invApp.SilentOperation = False
@@ -225,10 +225,10 @@ Namespace ToolInventor2025.Toolngoai
                                 "Excel Tables đã xóa: " & countExcel & vbCrLf &
                                 "Derived Parameters đã xóa: " & countDerived & vbCrLf &
                                 "OLE Links đã xóa: " & countOLE,
-                                "Visual Studio", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                                "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
             Catch ex As Exception
-                MessageBox.Show("Lỗi: " & ex.Message, "Visual Studio",
+                MessageBox.Show("Lỗi: " & ex.Message, "Thanh N",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
             Finally
                 invApp.SilentOperation = False
