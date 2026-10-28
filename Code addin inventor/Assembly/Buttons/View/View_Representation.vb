@@ -218,7 +218,7 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
             invApp.SilentOperation = True
             Try
                 Select Case selectedFunc
-                    Case 1
+                    Case 1   ' Kích hoạt theo tên → cần SetOccurrence
                         Dim viewName As String = ShowInputForm(
                             "Kích hoạt View Representation",
                             "Nhập tên View Representation cần kích hoạt:",
@@ -226,21 +226,21 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                         If String.IsNullOrEmpty(viewName) Then Return
 
                         If isAllLevel Then
-                            ActivateView_AllLevel(oAsmDoc, viewName)
+                            ActivateView_AllLevel(oAsmDoc, viewName, True)
                         Else
                             ActivateView_TopLevel(oAsmDoc, viewName)
                         End If
 
-                    Case 2
+                    Case 2   ' [Primary] → KHÔNG cần SetOccurrence
                         If isAllLevel Then
-                            ActivateView_AllLevel(oAsmDoc, "[Primary]")
+                            ActivateView_AllLevel(oAsmDoc, "[Primary]", False)
                         Else
                             ActivateView_TopLevel(oAsmDoc, "[Primary]")
                         End If
 
-                    Case 3
+                    Case 3   ' Default → cần SetOccurrence
                         If isAllLevel Then
-                            ActivateView_AllLevel(oAsmDoc, "Default")
+                            ActivateView_AllLevel(oAsmDoc, "Default", True)
                         Else
                             ActivateView_TopLevel(oAsmDoc, "Default")
                         End If
@@ -258,7 +258,6 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
         '=================================================
         Private Sub ActivateView_TopLevel(ByVal oAsmDoc As AssemblyDocument, ByVal viewName As String)
             Dim found As Boolean = ActivateViewInDoc(oAsmDoc, viewName)
-
             If found Then
                 MessageBox.Show("Đã kích hoạt View """ & viewName & """ (Top Level)",
                                 "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -270,27 +269,33 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
         End Sub
 
         '=================================================
-        ' KÍCH HOẠT VIEW - ALL LEVEL (đệ quy + SetDesignViewRepresentation)
+        ' KÍCH HOẠT VIEW - ALL LEVEL
+        ' needSetOccurrence = True  → chức năng 1 & 3
+        ' needSetOccurrence = False → chức năng 2 ([Primary])
         '=================================================
-        Private Sub ActivateView_AllLevel(ByVal oAsmDoc As AssemblyDocument, ByVal viewName As String)
+        Private Sub ActivateView_AllLevel(ByVal oAsmDoc As AssemblyDocument,
+                                          ByVal viewName As String,
+                                          ByVal needSetOccurrence As Boolean)
             Dim countSuccess As Integer = 0
             Dim countFail As Integer = 0
 
-            ' Đệ quy theo cây Occurrence (quan trọng để khắc phục [Primary] ẩn view con)
-            ProcessAssemblyRecursive(oAsmDoc, viewName, countSuccess, countFail)
+            ProcessAssemblyRecursive(oAsmDoc, viewName, needSetOccurrence, countSuccess, countFail)
 
             MessageBox.Show("Đã xử lý xong (All Level)!" & vbCrLf & vbCrLf &
                             "Thành công: " & countSuccess & vbCrLf &
                             "Không tìm thấy / Lỗi: " & countFail & vbCrLf & vbCrLf &
-                            "Đã SetDesignViewRepresentation (Associative) trên tất cả occurrence.",
+                            If(needSetOccurrence,
+                               "Đã SetDesignViewRepresentation (Associative) trên tất cả occurrence.",
+                               "Chỉ kích hoạt View [Primary] (không cần SetOccurrence)."),
                             "Thanh N", MessageBoxButtons.OK, MessageBoxIcon.Information)
         End Sub
 
         '=================================================
-        ' ĐỆ QUY THEO CÂY OCCURRENCE + SET VIEW TRÊN OCCURRENCE
+        ' ĐỆ QUY THEO CÂY OCCURRENCE
         '=================================================
         Private Sub ProcessAssemblyRecursive(ByVal oAsmDoc As AssemblyDocument,
                                              ByVal viewName As String,
+                                             ByVal needSetOccurrence As Boolean,
                                              ByRef countSuccess As Integer,
                                              ByRef countFail As Integer)
 
@@ -311,27 +316,27 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                     ' Chỉ xử lý Sub-Assembly
                     If oOcc.DefinitionDocumentType = DocumentTypeEnum.kAssemblyDocumentObject Then
 
-                        ' === KEY FIX: Set Design View trên occurrence (Associative = True) ===
-                        ' Giải quyết trường hợp Top Level đang [Primary] → view con bị ẩn
-                        Try
-                            oOcc.SetDesignViewRepresentation(viewName, , True)
-                        Catch
-                            ' Fallback nếu viewName không tồn tại trong sub
+                        ' === CHỈ chạy đoạn này khi needSetOccurrence = True (chức năng 1 & 3) ===
+                        If needSetOccurrence Then
                             Try
-                                oOcc.SetDesignViewRepresentation("Default", , True)
+                                oOcc.SetDesignViewRepresentation(viewName, , True)
                             Catch
+                                ' Fallback nếu viewName không tồn tại trong sub
                                 Try
-                                    oOcc.SetDesignViewRepresentation("[Primary]", , True)
+                                    oOcc.SetDesignViewRepresentation("Default", , True)
                                 Catch
+                                    Try
+                                        oOcc.SetDesignViewRepresentation("[Primary]", , True)
+                                    Catch
+                                    End Try
                                 End Try
                             End Try
-                        End Try
+                        End If
 
                         ' Đệ quy vào sub-assembly
                         Dim subAsm As AssemblyDocument = CType(oOcc.Definition.Document, AssemblyDocument)
-                        ProcessAssemblyRecursive(subAsm, viewName, countSuccess, countFail)
+                        ProcessAssemblyRecursive(subAsm, viewName, needSetOccurrence, countSuccess, countFail)
                     End If
-
                 Catch
                     countFail += 1
                 End Try
@@ -367,7 +372,6 @@ Namespace ToolInventor2025.Assembly.Buttons.ASS_View
                         End If
                     Next
                 End If
-
             Catch
             End Try
             Return False
