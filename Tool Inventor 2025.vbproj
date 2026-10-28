@@ -233,6 +233,12 @@
   <Content Include="Code addin inventor\Images\Drawing\i34.bmp">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </Content>
+  <Content Include="Code addin inventor\Images\i0 1.bmp">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Code addin inventor\Images\i0.bmp">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
   <Content Include="Code addin inventor\Images\Part\i1 1.bmp">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </Content>

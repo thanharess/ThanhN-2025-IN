@@ -15,11 +15,13 @@ Namespace ToolInventor2025
         Private Const AddInClientID As String = "27785725-854b-490a-ac86-ab9dad7f3cc5"
 
         Private WithEvents m_uievents As UserInterfaceEvents
+        Private m_toolButton As New System.Collections.Generic.List(Of ButtonDefinition)
         Private m_partButtons As New System.Collections.Generic.List(Of ButtonDefinition)
         Private m_assemblyButtons As New System.Collections.Generic.List(Of ButtonDefinition)
         Private m_drawingButtons As New System.Collections.Generic.List(Of ButtonDefinition)
         Private m_assembly2Buttons As New System.Collections.Generic.List(Of ButtonDefinition)
         Private m_assembly3Buttons As New System.Collections.Generic.List(Of ButtonDefinition)
+
         '  Private WithEvents m_ToolButton As ButtonDefinition
 
 #Region "ApplicationAddInServer Members"
@@ -120,7 +122,7 @@ Namespace ToolInventor2025
             Assembly3Buttons.Register(controlDefs, AddInClientID, m_assembly3Buttons, largeIcon, smallIcon)
             'm_ToolButton = controlDefs.AddButtonDefinition("Command Name", "Internal Name", CommandTypesEnum.kShapeEditCmdType, AddInClientID)
             'ToolButtons.Register(controlDefs, AddInClientID, m_ToolButtons, largeIcon, smallIcon)
-
+            ToolButtonDrawing.Register(controlDefs, AddInClientID, m_toolButton, largeIcon, smallIcon)
             ' m_ToolButton = controlDefs.AddButtonDefinition("hhhhhh", "h Name", CommandTypesEnum.kShapeEditCmdType, AddInClientID,,, smallIcon, largeIcon)
             'ToolButtons.Register(controlDefs, AddInClientID, m_ToolButtons, largeIcon, smallIcon)
 
@@ -165,6 +167,37 @@ Namespace ToolInventor2025
         ' the add-in loaded and also if the user interface is reset.
 
         ' Helper method to add a tab/panel/buttons to a ribbon.
+
+        ''' <summary>
+        ''' Thêm panel + buttons vào TAB CÓ SẴN của Inventor (ví dụ: "id_TabTools")
+        ''' Khác với AddTabPanelButtons (tạo tab mới), hàm này dùng tab built-in.
+        ''' </summary>
+        Private Sub AddToToolsTab(ribbonName As String, buttons As System.Collections.Generic.List(Of ButtonDefinition))
+            Try
+                Dim ribbonObj As Ribbon = g_inventorApplication.UserInterfaceManager.Ribbons.Item(ribbonName)
+                Dim toolsTab As RibbonTab = ribbonObj.RibbonTabs.Item("id_TabTools")
+
+                Dim panel As RibbonPanel = Nothing
+                Try
+                    panel = toolsTab.RibbonPanels.Add(" ", "ToolInventor2020_ToolsPanel_" & ribbonName, AddInClientID)
+                Catch
+                    Try
+                        panel = toolsTab.RibbonPanels.Item("ToolInventor2020_ToolsPanel_" & ribbonName)
+                    Catch
+                        panel = Nothing
+                    End Try
+                End Try
+
+                If panel IsNot Nothing AndAlso buttons IsNot Nothing Then
+                    For Each bd As ButtonDefinition In buttons
+                        panel.CommandControls.AddButton(bd)
+                    Next
+                End If
+            Catch
+            End Try
+        End Sub
+
+
         Private Sub AddTabPanelButtons(ribbonName As String, tabDisplayName As String, tabInternalName As String, panelDisplayName As String, panelInternalName As String, buttons As System.Collections.Generic.List(Of ButtonDefinition), Optional usePulldownOnly As Boolean = False)
             Try
                 Dim ribbonObj As Ribbon = g_inventorApplication.UserInterfaceManager.Ribbons.Item(ribbonName)
@@ -285,6 +318,10 @@ Namespace ToolInventor2025
             ' Panel visible; add buttons directly to the panel (no pulldown)
             ' AddTabPanelButtons("Assembly", "Tool Bom", "ToolInventor2025_AssemblyTab3", "Tool Assembly 2", "ToolInventor2025_AssemblyPanel3", m_assembly3Buttons, False)
 
+            ' Cách B: Thêm đồng thời vào Part + Assembly + Drawing (3 ribbon)
+            AddToToolsTab("Part", m_toolButton)
+            AddToToolsTab("Assembly", m_toolButton)
+            AddToToolsTab("Drawing", m_toolButton)
 
             '' Get the part ribbon.
             ' Dim partRibbon As Ribbon = g_inventorApplication.UserInterfaceManager.Ribbons.Item("Part")

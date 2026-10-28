@@ -158,34 +158,33 @@ Namespace ToolInventor2025
             ' Create Assembly buttons explicitly (no loop) so each button can have distinct implementation
             Dim assemblyBtna1 As ButtonDefinition = controlDefs.AddButtonDefinition("Thay tên ,STT BOM", "ToolInventor2025_Assembly_Btna1", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, Ass2SmallIcon1, Ass2LargeIcon1)
             AddHandler assemblyBtna1.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_1.OnExecute
-            buttonsList.Add(assemblyBtna1)
+            '' buttonsList.Add(assemblyBtna1)
 
             Dim assemblyBtna2 As ButtonDefinition = controlDefs.AddButtonDefinition("Item1 Buy Top lever về cuối", "ToolInventor2025_Assembly_Btna2", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, Ass2SmallIcon2, Ass2LargeIcon2)
             AddHandler assemblyBtna2.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_2.OnExecute
-            buttonsList.Add(assemblyBtna2)
+            ''  buttonsList.Add(assemblyBtna2)
 
             Dim assemblyBtna3 As ButtonDefinition = controlDefs.AddButtonDefinition("Ghi item1,t,SL", "ToolInventor2025_Assembly_Btna3", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, Ass2SmallIcon3, Ass2LargeIcon3)
             AddHandler assemblyBtna3.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_3.OnExecute
-            buttonsList.Add(assemblyBtna3)
+            ''  buttonsList.Add(assemblyBtna3)
 
             Dim assemblyBtna4 As ButtonDefinition = controlDefs.AddButtonDefinition("Ghi PL part,stocknumber", "ToolInventor2025_Assembly_Btna4", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, Ass2SmallIcon4, Ass2LargeIcon4)
             AddHandler assemblyBtna4.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_4.OnExecute
-            buttonsList.Add(assemblyBtna4)
+            ''  buttonsList.Add(assemblyBtna4)
 
             Dim assemblyBtna6 As ButtonDefinition = controlDefs.AddButtonDefinition("Xếp Model Browser ASS", "ToolInventor2025_Assembly_Btna6", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, Ass2SmallIcon6, Ass2LargeIcon6)
             AddHandler assemblyBtna6.OnExecute, AddressOf Assembly2.Buttons.BOMcode.ass_bom_6.OnExecute
-            buttonsList.Add(assemblyBtna6)
+            ''   buttonsList.Add(assemblyBtna6)
 
             Dim assemblyBtna7 As ButtonDefinition = controlDefs.AddButtonDefinition("Thay đổi đuôi tên BOM", "ToolInventor2025_Assembly_Btna7", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing,
                                                                                     "Đổi tên part number", Ass2SmallIcon7, Ass2LargeIcon7)
             AddHandler assemblyBtna7.OnExecute, AddressOf Assembly2.Buttons.BOMcode.ass_bom_7.OnExecute
-            buttonsList.Add(assemblyBtna7)
+            ''  buttonsList.Add(assemblyBtna7)
 
 
 
             Dim assemblyBtna5 As ButtonDefinition = controlDefs.AddButtonDefinition("Hiện gốc tọa độ để Constrain", "ToolInventor2025_Assembly_Btna5", CommandTypesEnum.kShapeEditCmdType, addInClientID,
-                                                                                    Nothing, "ấn chọn file part hoặc Assembly để hiện gốc tọa độ" & vbCrLf &
-                                                                                   " tiếp theo dùng lệnh Constrain để lắp ghép với nhau." & vbCrLf &
+                                                                                    Nothing, "ấn chọn file part hoặc Assembly để hiện gốc tọa độ" & vbCrLf & " tiếp theo dùng lệnh Constrain để lắp ghép với nhau." & vbCrLf &
                                                                                     "Nếu ấn ok thì sẽ ẩn hết các mặt phẳng & trục gốc tọa độ vừa ấn hiện", Ass2SmallIcon5, Ass2LargeIcon5)
             'AddHandler assemblyBtna5.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_5.OnExecute
             ' buttonsList.Add(assemblyBtna5)
@@ -234,8 +233,8 @@ tối đa 3 lever & không copy vào cụm lắp. chỉ copy part", Ass2SmallIco
             '  buttonsList.Add(assemblyBtna16)
 
             Dim assemblyBtna17 As ButtonDefinition = controlDefs.AddButtonDefinition("Assembly Action 17", "ToolInventor2025_Assembly_Btna17", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, Ass2SmallIcon17, Ass2LargeIcon17)
-            'AddHandler assemblyBtna17.OnExecute, AddressOf Assembly2.Buttons.BOMcode.Ass_Bom_17.OnExecute
-            ' buttonsList.Add(assemblyBtna17)
+            AddHandler assemblyBtna17.OnExecute, AddressOf Toolngoai.Button_Assembly2.OnExecute
+            buttonsList.Add(assemblyBtna17)
 
 
 

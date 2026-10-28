@@ -138,49 +138,49 @@ Namespace ToolInventor2025
                                                                     "Thêm dung sai vào dim sketch" & vbCrLf & "Mô tả: Thêm dung sai (tolerance) vào dimension trong sketch." & vbCrLf & "Ghi chú: chỉnh theo nhu cầu.",
                                                                      "Tooltip: Thêm dung sai vào dim sketch (edit)", part1SmallIcon, part1LargeIcon)
             AddHandler partBtn1.OnExecute, AddressOf Part.Buttons.solid.Part_Solid_1.OnExecute
-            buttonsList.Add(partBtn1)
+            ''     buttonsList.Add(partBtn1)
 
             Dim partBtn2 As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa fix all sketch", "ToolInventor2025_Part_Btn2", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                "Xóa fix all sketch" & vbCrLf & "Mô tả: Xóa trạng thái 'fix' cho tất cả sketch entities.",
                                                                                "Tooltip: Xóa fix all sketch (edit)", part2SmallIcon, part2LargeIcon)
             AddHandler partBtn2.OnExecute, AddressOf Part.Buttons.solid.Part_Solid_2.OnExecute
-            buttonsList.Add(partBtn2)
+            ''    buttonsList.Add(partBtn2)
 
             Dim partBtn3 As ButtonDefinition = controlDefs.AddButtonDefinition("Tạo coil line 3d", "ToolInventor2025_Part_Btn3", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                "Tạo coil line 3d" & vbCrLf & "Mô tả: Tạo đường coil 3D từ sketch hiện tại.",
                                                                                "Tooltip: Tạo coil line 3d (edit)", part3SmallIcon, part3LargeIcon)
             AddHandler partBtn3.OnExecute, AddressOf Part.Buttons.solid.Part_Solid_3.OnExecute
-            buttonsList.Add(partBtn3)
+            ''    buttonsList.Add(partBtn3)
 
             Dim partBtn4 As ButtonDefinition = controlDefs.AddButtonDefinition("Thay tên body", "ToolInventor2025_Part_Btn4", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                "Thay tên body" & vbCrLf & "Mô tả: Đổi tên body theo quy tắc đặt tên của bạn.",
                                                                                "Tooltip: Thay tên body (edit)", part4SmallIcon, part4LargeIcon)
             AddHandler partBtn4.OnExecute, AddressOf Part.Buttons.solid.Part_Solid_4.OnExecute
-            buttonsList.Add(partBtn4)
+            ''   buttonsList.Add(partBtn4)
 
             Dim partBtn5 As ButtonDefinition = controlDefs.AddButtonDefinition("Export từng body sang các định dạng khác", "ToolInventor2025_Part_Btn5", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                "Export từng body sang các định dạng khác" & vbCrLf & "Mô tả: Xuất từng body ra file STEP/IGES/...",
                                                                                "Tooltip: Export từng body (edit)", part5SmallIcon, part5LargeIcon)
             AddHandler partBtn5.OnExecute, AddressOf Part.Buttons.solid.Part_Solid_5.OnExecute
-            buttonsList.Add(partBtn5)
+            ''   buttonsList.Add(partBtn5)
 
             Dim partBtn6 As ButtonDefinition = controlDefs.AddButtonDefinition("Thay tên body part theo thứ tự", "ToolInventor2025_Part_Btn6", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                "Thay tên body part theo thứ tự" & vbCrLf & "Mô tả: Đổi tên body theo thứ tự trong danh sách.",
                                                                                "Tooltip: Thay tên body theo thứ tự (edit)", part6SmallIcon, part6LargeIcon)
             AddHandler partBtn6.OnExecute, AddressOf Part.Buttons.solid.Part_Solid_6.OnExecute
-            buttonsList.Add(partBtn6)
+            ''   buttonsList.Add(partBtn6)
 
             Dim partBtn7 As ButtonDefinition = controlDefs.AddButtonDefinition("Import step to part", "ToolInventor2025_Part_Btn7", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                               "1, Import all file to part tự lưu, xóa liên kết lưu file tự động " & vbCrLf &
                                                                                "Có thể chọn nhiều file 1 lúc",, part7SmallIcon, part7LargeIcon)
             AddHandler partBtn7.OnExecute, AddressOf Assembly.Buttons.Lenhngoaicumlap.Im_EX_step_part.OnExecute
-            buttonsList.Add(partBtn7)
+            ''  buttonsList.Add(partBtn7)
 
             Dim partBtn8 As ButtonDefinition = controlDefs.AddButtonDefinition("Thay màu part", "ToolInventor2025_Part_Btn8", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                "Thay màu part" & vbCrLf & "Thay mà theo vật liệu Steel",
                                                                                Nothing, part8SmallIcon, part8LargeIcon)
             AddHandler partBtn8.OnExecute, AddressOf Part.Buttons.Part_Solid_7e.OnExecute
-            buttonsList.Add(partBtn8)
+            ''  buttonsList.Add(partBtn8)
 
             Dim partBtn9 As ButtonDefinition = controlDefs.AddButtonDefinition("Part Action 9", "ToolInventor2025_Part_Btn9", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                "Part Action 9" & vbCrLf & "Mô tả: (chỉnh sửa) Action 9 cho Part.",
@@ -223,13 +223,13 @@ Namespace ToolInventor2025
                                                                                 Nothing,
                                                                                "Mở vị trí lưu file", part15SmallIcon, part15LargeIcon)
             AddHandler partBtn15.OnExecute, AddressOf Toolngoai.Vitrifile.Vitrifile
-            buttonsList.Add(partBtn15)
+            '' buttonsList.Add(partBtn15)
 
             Dim partBtn14 As ButtonDefinition = controlDefs.AddButtonDefinition("Xóa Link OLE", "ToolInventor2025_Part_Btn14", CommandTypesEnum.kShapeEditCmdType, addInClientID,
                                                                                 "Xóa Link OLE" & vbCrLf & "Mô tả: (chỉnh sửa) Xóa tất cả các liên kết OLE trong tài liệu.",
                                                                                 "Tooltip: Xóa Link OLE (edit)", part14SmallIcon, part14LargeIcon)
             AddHandler partBtn14.OnExecute, AddressOf Toolngoai.delete_link_OLE.OnExecute
-            buttonsList.Add(partBtn14)
+            '' buttonsList.Add(partBtn14)
 
 
         End Sub
