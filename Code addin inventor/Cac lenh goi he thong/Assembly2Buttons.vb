@@ -234,7 +234,7 @@ tối đa 3 lever & không copy vào cụm lắp. chỉ copy part", Ass2SmallIco
 
             Dim assemblyBtna17 As ButtonDefinition = controlDefs.AddButtonDefinition("Assembly Action 17", "ToolInventor2025_Assembly_Btna17", CommandTypesEnum.kShapeEditCmdType, addInClientID, Nothing, Nothing, Ass2SmallIcon17, Ass2LargeIcon17)
             AddHandler assemblyBtna17.OnExecute, AddressOf Toolngoai.Button_Assembly2.OnExecute
-            buttonsList.Add(assemblyBtna17)
+            ''  buttonsList.Add(assemblyBtna17)
 
 
 

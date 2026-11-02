@@ -252,13 +252,13 @@ Namespace ToolInventor2025
             AddHandler subBtn1e.OnExecute, AddressOf Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1e.OnExecute
 
             Dim pd As New PopupRegistry.PopupDef()
-            pd.SubButtons.Add(subBtn1a)     ' ← Nút chính
-            pd.SubButtons.Add(subBtn1b)     ' ← Sub 1
-            pd.SubButtons.Add(subBtn1c)     ' ← Sub 2
-            pd.SubButtons.Add(subBtn1d)     ' ← Sub 3
-            pd.SubButtons.Add(subBtn1e)     ' ← Sub 4
+            ''   pd.SubButtons.Add(subBtn1a)     ' ← Nút chính
+            ''   pd.SubButtons.Add(subBtn1b)     ' ← Sub 1
+            ''   pd.SubButtons.Add(subBtn1c)     ' ← Sub 2
+            ''   pd.SubButtons.Add(subBtn1d)     ' ← Sub 3
+            ''   pd.SubButtons.Add(subBtn1e)     ' ← Sub 4
 
-            PopupRegistry.RegisterPopup("ToolInventor2025_AssemblyPanel", pd)
+            ''   PopupRegistry.RegisterPopup("ToolInventor2025_AssemblyPanel", pd)
 
 
 

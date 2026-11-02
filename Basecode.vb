@@ -179,10 +179,10 @@ Namespace ToolInventor2025
 
                 Dim panel As RibbonPanel = Nothing
                 Try
-                    panel = toolsTab.RibbonPanels.Add(" ", "ToolInventor2020_ToolsPanel_" & ribbonName, AddInClientID)
+                    panel = toolsTab.RibbonPanels.Add(" ", "ToolInventor2025_ToolsPanel_" & ribbonName, AddInClientID)
                 Catch
                     Try
-                        panel = toolsTab.RibbonPanels.Item("ToolInventor2020_ToolsPanel_" & ribbonName)
+                        panel = toolsTab.RibbonPanels.Item("ToolInventor2025_ToolsPanel_" & ribbonName)
                     Catch
                         panel = Nothing
                     End Try

@@ -310,7 +310,7 @@ Namespace ToolInventor2025
                                                                                   "Mở vị trí lưu file", Dra1SmallIcon24, Dra1LargeIcon24)
             AddHandler DrawingBtn24.OnExecute, AddressOf Toolngoai.Button_Drawing.OnExecute
 
-            buttonsList.Add(DrawingBtn24)
+            ''   buttonsList.Add(DrawingBtn24)
         End Sub
     End Class
 End Namespace

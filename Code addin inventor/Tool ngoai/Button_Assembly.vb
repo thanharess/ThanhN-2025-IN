@@ -68,7 +68,7 @@ Namespace ToolInventor2025.Toolngoai
             Using form As New Form()
                 form.Text = "Tool Inventor 2025  -  Assembly Tools"
                 form.Width = FORM_WIDTH
-                form.Height = 750
+                form.Height = 780
                 form.StartPosition = FormStartPosition.CenterScreen
                 form.FormBorderStyle = FormBorderStyle.FixedDialog
                 form.MaximizeBox = False
