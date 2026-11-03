@@ -130,7 +130,7 @@ Namespace ToolInventor2025.Toolngoai
                 ' ── Nút HỦY ────────────────────────────
                 Dim cancel As New Button() With {
                     .Text = "✕   HỦY",
-                    .Left = 15, .Top = y + 3, .Width = FORM_WIDTH - 30, .Height = 38,
+                    .Left = 15, .Top = y + 0, .Width = FORM_WIDTH - 45, .Height = 38,
                     .BackColor = System.Drawing.Color.FromArgb(230, 70, 70),
                     .ForeColor = System.Drawing.Color.White,
                     .FlatStyle = FlatStyle.Flat,

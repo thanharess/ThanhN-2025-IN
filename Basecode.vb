@@ -44,14 +44,8 @@ Namespace ToolInventor2025
             ' ── CHỈ đăng ký "Place Constraint" ──
             ' Nút "Hiện Planes/Axes" đã có sẵn trên Ribbon (Btn16 - "Hiện gốc tọa độ để Constrain")
             ' Không cần thêm vào context menu nữa.
-            ContextMenuManager.RegisterButton(
-                "Place Constraint",
-                "ToolInventor2025_Context_Constraint",
-                "Mở hộp thoại Place Constraint",
-                AddressOf ContextMenuActions.RunPlaceConstraint,
-                ContextEnv.Assembly,
-                "",
-                True)   ' onlyWhenPlanesVisible = True
+            ContextMenuManager.RegisterButton("Place Constraint", "ToolInventor2025_Context_Constraint", "Mở hộp thoại Place Constraint", AddressOf ContextMenuActions.RunPlaceConstraint, ContextEnv.Assembly, "", True)
+            ' onlyWhenPlanesVisible = True
             ' === Muốn thêm nút mới? Chỉ cần thêm 1 dòng như trên ===
             ' Connect to the user-interface events to handle a ribbon reset.
             m_uievents = g_inventorApplication.UserInterfaceManager.UserInterfaceEvents
@@ -196,7 +190,30 @@ Namespace ToolInventor2025
             Catch
             End Try
         End Sub
+        Private Sub AddToCollaborateTab(ribbonName As String, buttons As System.Collections.Generic.List(Of ButtonDefinition))
+            Try
+                Dim ribbonObj As Ribbon = g_inventorApplication.UserInterfaceManager.Ribbons.Item(ribbonName)
+                Dim collabTab As RibbonTab = ribbonObj.RibbonTabs.Item("id_OnlineTab")
 
+                Dim panel As RibbonPanel = Nothing
+                Try
+                    panel = collabTab.RibbonPanels.Add(" ", "ToolInventor2025_Collaborate_" & ribbonName, AddInClientID)
+                Catch
+                    Try
+                        panel = collabTab.RibbonPanels.Item("ToolInventor2025_Collaborate_" & ribbonName)
+                    Catch
+                        panel = Nothing
+                    End Try
+                End Try
+
+                If panel IsNot Nothing AndAlso buttons IsNot Nothing Then
+                    For Each bd As ButtonDefinition In buttons
+                        panel.CommandControls.AddButton(bd)
+                    Next
+                End If
+            Catch
+            End Try
+        End Sub
 
         Private Sub AddTabPanelButtons(ribbonName As String, tabDisplayName As String, tabInternalName As String, panelDisplayName As String, panelInternalName As String, buttons As System.Collections.Generic.List(Of ButtonDefinition), Optional usePulldownOnly As Boolean = False)
             Try
@@ -319,9 +336,14 @@ Namespace ToolInventor2025
             ' AddTabPanelButtons("Assembly", "Tool Bom", "ToolInventor2025_AssemblyTab3", "Tool Assembly 2", "ToolInventor2025_AssemblyPanel3", m_assembly3Buttons, False)
 
             ' Cách B: Thêm đồng thời vào Part + Assembly + Drawing (3 ribbon)
-            AddToToolsTab("Part", m_toolButton)
-            AddToToolsTab("Assembly", m_toolButton)
-            AddToToolsTab("Drawing", m_toolButton)
+            ''  AddToToolsTab("Part", m_toolButton)
+            '' AddToToolsTab("Assembly", m_toolButton)
+            '' AddToToolsTab("Drawing", m_toolButton) ' chạy đc
+
+            AddToCollaborateTab("Part", m_toolButton)
+            AddToCollaborateTab("Assembly", m_toolButton)
+            AddToCollaborateTab("Drawing", m_toolButton)
+
 
             '' Get the part ribbon.
             ' Dim partRibbon As Ribbon = g_inventorApplication.UserInterfaceManager.Ribbons.Item("Part")

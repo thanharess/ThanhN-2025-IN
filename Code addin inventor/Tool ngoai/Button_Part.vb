@@ -45,7 +45,7 @@ Namespace ToolInventor2025.Toolngoai
                 form.Tag = 0
 
                 Dim banner As New Label() With {
-                    .Text = "🧩   TỔNG HỢP CÔNG CỤ PART",
+                    .Text = "⚙   TỔNG HỢP CÔNG CỤ PART",
                     .Left = 0, .Top = 0, .Width = FORM_WIDTH, .Height = 52,
                     .TextAlign = ContentAlignment.MiddleCenter,
                     .Font = New Font("Segoe UI", 13.0!, FontStyle.Bold),
@@ -66,7 +66,7 @@ Namespace ToolInventor2025.Toolngoai
                     "Mở nơi lưu File", "Xóa Link OLE"})
 
                 Dim cancel As New Button() With {
-                    .Text = "✕   HỦY", .Left = 15, .Top = y + 3, .Width = FORM_WIDTH - 30, .Height = 38,
+                    .Text = "✕   HỦY", .Left = 15, .Top = y + 0, .Width = FORM_WIDTH - 45, .Height = 38,
                     .BackColor = System.Drawing.Color.FromArgb(230, 70, 70), .ForeColor = System.Drawing.Color.White,
                     .FlatStyle = FlatStyle.Flat, .Font = New Font("Segoe UI", 9.5!, FontStyle.Bold), .Cursor = Cursors.Hand}
                 cancel.FlatAppearance.BorderSize = 0

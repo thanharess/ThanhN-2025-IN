@@ -165,6 +165,13 @@ Namespace ToolInventor2025
             Dim toolBtnCombo4 As ButtonDefinition = controlDefs.AddButtonDefinition("    ", "ToolInventor2025_Tool_Drawing", CommandTypesEnum.kShapeEditCmdType, addInClientID, "Mở menu Drawing Tools",, ToolDrawSmallIcon4, ToolDrawLargeIcon4)
             AddHandler toolBtnCombo4.OnExecute, AddressOf Toolngoai.Button_Drawing.OnExecute
             buttonsList.Add(toolBtnCombo4)
+
+
+
+
+
+
+
         End Sub
     End Class
 End Namespace
