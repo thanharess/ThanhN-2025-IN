@@ -3,6 +3,7 @@ Option Strict Off
 
 Imports System.Windows.Forms
 Imports System.Drawing
+Imports System.Collections.Generic
 Imports Inventor
 
 Namespace ToolInventor2025.Toolngoai
@@ -19,51 +20,136 @@ Namespace ToolInventor2025.Toolngoai
         Private Const GB_PADDING As Integer = 12
 
         '══════════════════════════════════════════════════════
-        ' DISPATCH: số thứ tự → hàm xử lý
+        ' CLASS MÔ TẢ 1 NÚT VÀ 1 NHÓM
+        '══════════════════════════════════════════════════════
+        Private Class MenuItemDef
+            Public Text As String
+            Public Action As Action(Of NameValueMap)
+            Public Sub New(t As String, a As Action(Of NameValueMap))
+                Text = t
+                Action = a
+            End Sub
+        End Class
+
+        Private Class MenuGroupDef
+            Public Title As String
+            Public Items As New List(Of MenuItemDef)
+            Public Sub New(t As String)
+                Title = t
+            End Sub
+        End Class
+
+        '══════════════════════════════════════════════════════
+        ' ⭐⭐⭐  CHỈ CẦN SỬA HÀM NÀY KHI THÊM / XÓA / ĐỔI NÚT  ⭐⭐⭐
+        '
+        '  • Thêm nút vào nhóm có sẵn:
+        '       gX.Items.Add(New MenuItemDef("Tên nút", Sub(c) Namespace.Class.OnExecute(c)))
+        '
+        '  • Hàm không nhận Context:
+        '       gX.Items.Add(New MenuItemDef("Tên nút", Sub(c) Namespace.Class.Run()))
+        '
+        '  • Thêm nhóm mới:
+        '       Dim g6 As New MenuGroupDef("🎯   Tiêu đề")
+        '       g6.Items.Add(New MenuItemDef("Nút 1", Sub(c) ...))
+        '       groups.Add(g6)
+        '
+        '  • Đổi thứ tự nút  → đổi thứ tự các dòng .Items.Add()
+        '  • Đổi thứ tự nhóm → đổi thứ tự các dòng groups.Add()
+        '  • Xóa nút/nhóm    → xóa dòng .Items.Add() / groups.Add() tương ứng
+        '
+        '  Số thứ tự (01, 02, 03...) trên nút là TỰ ĐỘNG – không cần
+        '  tự đánh số. Thêm / xóa / di chuyển vẫn đúng thứ tự.
+        '══════════════════════════════════════════════════════
+        Private Function BuildMenu() As List(Of MenuGroupDef)
+            Dim groups As New List(Of MenuGroupDef)
+
+            '── 🔧 Constrain ────────────────────────────────
+            Dim g1 As New MenuGroupDef("🔧   Constrain")
+            g1.Items.Add(New MenuItemDef("Suppress, Constrain, Ground",
+                Sub(c) Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1a.OnExecute(c)))
+            g1.Items.Add(New MenuItemDef("Constrain Keep Position",
+                Sub(c) Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1b.OnExecute(c)))
+            g1.Items.Add(New MenuItemDef("Constrain về gốc 2 chi tiết",
+                Sub(c) Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1c.OnExecute(c)))
+            g1.Items.Add(New MenuItemDef("Constrain All to Select",
+                Sub(c) Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1d.OnExecute(c)))
+            g1.Items.Add(New MenuItemDef("Xóa all Constraint lỗi",
+                Sub(c) Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1e.OnExecute(c)))
+            groups.Add(g1)
+
+            '── 📦 Assembly ─────────────────────────────────
+            Dim g2 As New MenuGroupDef("📦   Assembly")
+            g2.Items.Add(New MenuItemDef("Hiện gốc tọa độ để Constrain",
+                Sub(c) Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_2.OnExecute(c)))
+            g2.Items.Add(New MenuItemDef("Tắt ALL Adaptive cụm LG",
+                Sub(c) Assembly.Buttons.caclenhlapghep.Ass_LG_1.OnExecute(c)))
+            g2.Items.Add(New MenuItemDef("UPDATE DESIGN STANDARD",
+                Sub(c) Assembly.Buttons.caclenhlapghep.Ass_LG_2.OnExecute(c)))
+            g2.Items.Add(New MenuItemDef("Ẩn file (sheetmetal)",
+                Sub(c) Assembly.Buttons.caclenhlapghep.Ass_LG_3.OnExecute(c)))
+            g2.Items.Add(New MenuItemDef("View Representation",
+                Sub(c) Assembly.Buttons.ASS_View.View_Representation.OnExecute(c)))
+            g2.Items.Add(New MenuItemDef("Replace Component",
+                Sub(c) Assembly.Buttons.caclenhlapghep.Ass_Part_Replace.OnExecute(c)))
+            groups.Add(g2)
+
+            '── 🧩 Part ─────────────────────────────────────
+            Dim g3 As New MenuGroupDef("🧩   Part")
+            g3.Items.Add(New MenuItemDef("Convert to Sheetmetal",
+                Sub(c) Assembly.Buttons.Part.Ass_Part_1.OnExecute(c)))
+            g3.Items.Add(New MenuItemDef("Combo Part (vật liệu, màu, đơn vị)",
+                Sub(c) Assembly.Buttons.Part.Ass_Part_list_1.OnExecute(c)))
+            g3.Items.Add(New MenuItemDef("Trải ALL Sheetmetal",
+                Sub(c) Assembly.Buttons.Part.Ass_Part_4.OnExecute(c)))
+            g3.Items.Add(New MenuItemDef("Save copy to replace part",
+                Sub(c) Assembly.Buttons.Part.Ass_part_5.OnExecute(c)))
+            g3.Items.Add(New MenuItemDef("Ẩn all plane part",
+                Sub(c) Assembly.Buttons.Part.Ass_Part_7.OnExecute(c)))
+            groups.Add(g3)
+
+            '── 📊 Vật tư / Drawing / Frame ─────────────────
+            Dim g4 As New MenuGroupDef("📊   Vật tư / Drawing / Frame")
+            g4.Items.Add(New MenuItemDef("Lọc tấm, mua, Standard",
+                Sub(c) Assembly.Buttons.caclenhboctach.part.Ass_boctach_part_1.OnExecute(c)))
+            g4.Items.Add(New MenuItemDef("Auto Drawing",
+                Sub(c) Assembly.Buttons.AutoCreateDrawing.ASS_Auto_Drawing.OnExecute(c)))
+            g4.Items.Add(New MenuItemDef("Xem lỗi cắt Frame",
+                Sub(c) Assembly.Buttons.Frame.Ass_Frame_1.OnExecute(c)))
+            g4.Items.Add(New MenuItemDef("Xem lỗi cắt Frame (chọn loại)",
+                Sub(c) Assembly.Buttons.Frame.Ass_Frame_1B.OnExecute(c)))
+            groups.Add(g4)
+
+            '── 🌐 Ngoài cụm lắp ───────────────────────────
+            Dim g5 As New MenuGroupDef("🌐   Ngoài cụm lắp")
+            g5.Items.Add(New MenuItemDef("Import, Export step & part",
+                Sub(c) Assembly.Buttons.Lenhngoaicumlap.Im_EX_step_part.OnExecute(c)))
+            g5.Items.Add(New MenuItemDef("Design Assistant",
+                Sub(c) Assembly.Buttons.Lenhngoaicumlap.Design_Assistant.OnExecute(c)))
+            g5.Items.Add(New MenuItemDef("Mở nơi lưu File",
+                Sub(c) Toolngoai.Vitrifile.Vitrifile()))
+            g5.Items.Add(New MenuItemDef("Xóa Link OLE",
+                Sub(c) Toolngoai.delete_link_OLE.OnExecute(c)))
+            groups.Add(g5)
+
+            Return groups
+        End Function
+
+        '══════════════════════════════════════════════════════
+        ' DISPATCH – không cần Select Case nữa
         '══════════════════════════════════════════════════════
         Public Sub OnExecute(ByVal Context As NameValueMap)
-            Select Case qShowMenu()
-
-                ' ── Constrain ──────────────────────────────
-                Case 1 : Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1a.OnExecute(Context)
-                Case 2 : Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1b.OnExecute(Context)
-                Case 3 : Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1c.OnExecute(Context)
-                Case 4 : Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1d.OnExecute(Context)
-                Case 5 : Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_1e.OnExecute(Context)
-
-                ' ── Assembly ───────────────────────────────
-                Case 6 : Assembly.Buttons.caclenhlapghep.constraint.Ass_LG_C_2.OnExecute(Context)
-                Case 7 : Assembly.Buttons.caclenhlapghep.Ass_LG_1.OnExecute(Context)
-                Case 8 : Assembly.Buttons.caclenhlapghep.Ass_LG_2.OnExecute(Context)
-                Case 9 : Assembly.Buttons.caclenhlapghep.Ass_LG_3.OnExecute(Context)
-                Case 10 : Assembly.Buttons.ASS_View.View_Representation.OnExecute(Context)
-
-                ' ── Part ───────────────────────────────────
-                Case 11 : Assembly.Buttons.Part.Ass_Part_1.OnExecute(Context)
-                Case 12 : Assembly.Buttons.Part.Ass_Part_list_1.OnExecute(Context)
-                Case 13 : Assembly.Buttons.Part.Ass_Part_4.OnExecute(Context)
-                Case 14 : Assembly.Buttons.Part.Ass_part_5.OnExecute(Context)
-                Case 15 : Assembly.Buttons.Part.Ass_Part_7.OnExecute(Context)
-
-                ' ── Vật tư / Drawing / Frame ───────────────
-                Case 16 : Assembly.Buttons.caclenhboctach.part.Ass_boctach_part_1.OnExecute(Context)
-                Case 17 : Assembly.Buttons.AutoCreateDrawing.ASS_Auto_Drawing.OnExecute(Context)
-                Case 18 : Assembly.Buttons.Frame.Ass_Frame_1.OnExecute(Context)
-
-                ' ── Ngoài cụm lắp ──────────────────────────
-                Case 19 : Assembly.Buttons.Lenhngoaicumlap.Im_EX_step_part.OnExecute(Context)
-                Case 20 : Assembly.Buttons.Lenhngoaicumlap.Design_Assistant.OnExecute(Context)
-                Case 21 : Toolngoai.Vitrifile.Vitrifile()
-                Case 22 : Toolngoai.delete_link_OLE.OnExecute(Context)
-
-            End Select
+            Dim action As Action(Of NameValueMap) = qShowMenu()
+            If action IsNot Nothing Then
+                action(Context)
+            End If
         End Sub
 
         '══════════════════════════════════════════════════════
         ' FORM MENU
         '══════════════════════════════════════════════════════
-        Private Function qShowMenu() As Integer
-            Dim result As Integer = 0
+        Private Function qShowMenu() As Action(Of NameValueMap)
+            Dim result As Action(Of NameValueMap) = Nothing
+            Dim groups As List(Of MenuGroupDef) = BuildMenu()
 
             Using form As New Form()
                 form.Text = "Tool Inventor 2025  -  Assembly Tools"
@@ -75,7 +161,7 @@ Namespace ToolInventor2025.Toolngoai
                 form.MinimizeBox = False
                 form.BackColor = System.Drawing.Color.FromArgb(245, 248, 252)
                 form.Font = New Font("Segoe UI", 9.0!)
-                form.Tag = 0
+                form.Tag = Nothing
 
                 ' ── Banner ─────────────────────────────
                 Dim banner As New Label() With {
@@ -89,48 +175,16 @@ Namespace ToolInventor2025.Toolngoai
                 form.Controls.Add(banner)
 
                 Dim y As Integer = 62
+                Dim stt As Integer = 1     ' số thứ tự tự tăng
 
-                y = AddGroup(form, "🔧   Constrain", y, 1, New String() {
-                    "Suppress, Constrain, Ground",
-                    "Constrain Keep Position",
-                    "Constrain về gốc 2 chi tiết",
-                    "Constrain All to Select",
-                    "Xóa all Constraint lỗi"
-                })
-
-                y = AddGroup(form, "📦   Assembly", y, 6, New String() {
-                    "Hiện gốc tọa độ để Constrain",
-                    "Tắt ALL Adaptive cụm LG",
-                    "UPDATE DESIGN STANDARD",
-                    "Ẩn file (sheetmetal)",
-                    "View Representation"
-                })
-
-                y = AddGroup(form, "🧩   Part", y, 11, New String() {
-                    "Convert to Sheetmetal",
-                    "Combo Part (vật liệu, màu, đơn vị)",
-                    "Trải ALL Sheetmetal",
-                    "Save copy to replace part",
-                    "Ẩn all plane part"
-                })
-
-                y = AddGroup(form, "📊   Vật tư / Drawing / Frame", y, 16, New String() {
-                    "Lọc tấm, mua, Standard",
-                    "Auto Drawing",
-                    "Xem lỗi cắt Frame"
-                })
-
-                y = AddGroup(form, "🌐   Ngoài cụm lắp", y, 19, New String() {
-                    "Import, Export step & part",
-                    "Design Assistant",
-                    "Mở nơi lưu File",
-                    "Xóa Link OLE"
-                })
+                For Each g As MenuGroupDef In groups
+                    y = AddGroup(form, g, y, stt)
+                Next
 
                 ' ── Nút HỦY ────────────────────────────
                 Dim cancel As New Button() With {
                     .Text = "✕   HỦY",
-                    .Left = 15, .Top = y + 0, .Width = FORM_WIDTH - 45, .Height = 38,
+                    .Left = 15, .Top = y, .Width = FORM_WIDTH - 45, .Height = 38,
                     .BackColor = System.Drawing.Color.FromArgb(230, 70, 70),
                     .ForeColor = System.Drawing.Color.White,
                     .FlatStyle = FlatStyle.Flat,
@@ -143,7 +197,10 @@ Namespace ToolInventor2025.Toolngoai
 
                 form.Height = y + 75
                 form.ShowDialog()
-                result = CInt(form.Tag)
+
+                If form.Tag IsNot Nothing Then
+                    result = CType(form.Tag, Action(Of NameValueMap))
+                End If
             End Using
 
             Return result
@@ -152,15 +209,16 @@ Namespace ToolInventor2025.Toolngoai
         '══════════════════════════════════════════════════════
         ' HELPER: vẽ 1 GroupBox với các nút chia 2 cột
         '══════════════════════════════════════════════════════
-        Private Function AddGroup(form As Form, title As String, top As Integer,
-                                  startValue As Integer, texts As String()) As Integer
+        Private Function AddGroup(form As Form, group As MenuGroupDef,
+                                  top As Integer, ByRef startStt As Integer) As Integer
             Const GB_WIDTH As Integer = FORM_WIDTH - 30
 
-            Dim rows As Integer = CInt(Math.Ceiling(texts.Length / COLS))
+            Dim n As Integer = group.Items.Count
+            Dim rows As Integer = CInt(Math.Ceiling(n / COLS))
             Dim gbHeight As Integer = 22 + rows * (BTN_H + BTN_GAP) + 8
 
             Dim gb As New GroupBox() With {
-                .Text = "  " & title,
+                .Text = "  " & group.Title,
                 .Left = 15, .Top = top, .Width = GB_WIDTH, .Height = gbHeight,
                 .Font = New Font("Segoe UI", 9.5!, FontStyle.Bold),
                 .ForeColor = System.Drawing.Color.FromArgb(0, 100, 170),
@@ -170,13 +228,15 @@ Namespace ToolInventor2025.Toolngoai
 
             Dim colWidth As Integer = CInt((GB_WIDTH - 2 * GB_PADDING - (COLS - 1) * 6) / COLS)
 
-            For i As Integer = 0 To texts.Length - 1
+            For i As Integer = 0 To n - 1
+                Dim item As MenuItemDef = group.Items(i)
                 Dim col As Integer = i Mod COLS
                 Dim row As Integer = i \ COLS
-                Dim value As Integer = startValue + i
+                Dim value As Integer = startStt
+                startStt += 1
 
                 Dim b As New Button() With {
-                    .Text = value.ToString("00") & ".   " & texts(i),
+                    .Text = value.ToString("00") & ".   " & item.Text,
                     .Left = GB_PADDING + col * (colWidth + 6),
                     .Top = 22 + row * (BTN_H + BTN_GAP),
                     .Width = colWidth,
@@ -192,8 +252,10 @@ Namespace ToolInventor2025.Toolngoai
                 b.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(200, 212, 224)
                 b.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(217, 236, 255)
                 b.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(180, 215, 250)
+
+                Dim capturedAction As Action(Of NameValueMap) = item.Action
                 AddHandler b.Click, Sub()
-                                        form.Tag = value
+                                        form.Tag = capturedAction
                                         form.Close()
                                     End Sub
                 gb.Controls.Add(b)
