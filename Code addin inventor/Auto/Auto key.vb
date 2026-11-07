@@ -33,7 +33,13 @@ Namespace ToolInventor2025.Toolngoai
             Private Const HOTKEY_ASSY As Integer = 9002
             Private Const HOTKEY_BOM As Integer = 9003
             Private Const HOTKEY_DRAW As Integer = 9004
+
+            ' Modifier flags
+            Private Const MOD_ALT As UInteger = &H1
+            Private Const MOD_CONTROL As UInteger = &H2
             Private Const MOD_SHIFT As UInteger = &H4
+            ' Tổ hợp Shift + Alt + Ctrl
+            Private Const MOD_COMBO As UInteger = MOD_ALT Or MOD_CONTROL Or MOD_SHIFT
 
             <DllImport("user32.dll", SetLastError:=True)>
             Private Shared Function RegisterHotKey(hWnd As IntPtr, id As Integer, fsModifiers As UInteger, vk As UInteger) As Boolean
@@ -54,10 +60,11 @@ Namespace ToolInventor2025.Toolngoai
 
             Protected Overrides Sub OnHandleCreated(e As EventArgs)
                 MyBase.OnHandleCreated(e)
-                RegisterHotKey(Me.Handle, HOTKEY_PART, MOD_SHIFT, CUInt(Keys.D1))
-                RegisterHotKey(Me.Handle, HOTKEY_ASSY, MOD_SHIFT, CUInt(Keys.D2))
-                RegisterHotKey(Me.Handle, HOTKEY_BOM, MOD_SHIFT, CUInt(Keys.D3))
-                RegisterHotKey(Me.Handle, HOTKEY_DRAW, MOD_SHIFT, CUInt(Keys.D4))
+                ' Shift + Alt + Ctrl + 1/2/3/4
+                RegisterHotKey(Me.Handle, HOTKEY_PART, MOD_COMBO, CUInt(Keys.D1))
+                RegisterHotKey(Me.Handle, HOTKEY_ASSY, MOD_COMBO, CUInt(Keys.D2))
+                RegisterHotKey(Me.Handle, HOTKEY_BOM, MOD_COMBO, CUInt(Keys.D3))
+                RegisterHotKey(Me.Handle, HOTKEY_DRAW, MOD_COMBO, CUInt(Keys.D4))
             End Sub
 
             Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
