@@ -39,7 +39,7 @@ Namespace ToolInventor2025.Assembly.Buttons.Part
                 End Try
             Next
             oAsmDoc.Update()
-            MessageBox.Show("Đã an plane goc toa do", "Visual Studio")
+            MessageBox.Show("Đã an plane goc toa do", "ThanhN")
         End Sub
 
     End Module

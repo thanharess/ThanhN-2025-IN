@@ -13,7 +13,7 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
             Dim oAsmDoc As Document = invApp.ActiveDocument
 
             If oAsmDoc.DocumentType <> DocumentTypeEnum.kAssemblyDocumentObject Then
-                MessageBox.Show("This is not an assembly!", "Visual Studio")
+                MessageBox.Show("This is not an assembly!", "ThanhN")
                 Return
             End If
 
@@ -30,7 +30,7 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
                 End Try
             Next
 
-            MessageBox.Show("Turned off adaptivity in " & i & " documents", "Visual Studio")
+            MessageBox.Show("Turned off adaptivity in " & i & " documents", "ThanhN")
         End Sub
     End Module
 
