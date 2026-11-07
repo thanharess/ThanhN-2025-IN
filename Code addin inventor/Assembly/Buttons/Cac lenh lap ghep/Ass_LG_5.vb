@@ -310,58 +310,204 @@ Namespace ToolInventor2025.Assembly.Buttons.caclenhlapghep
                 Return ""
             End Try
         End Function
-
         '=================================================
-        ' FORM CHỌN CHẾ ĐỘ
+        ' FORM CHỌN CHẾ ĐỘ — 4 nút cứng có hover highlight
         '=================================================
         Private Function ShowModeForm() As Integer
-            Dim frm As New Form()
-            frm.Text = "Replace Component"
-            frm.Size = New Size(460, 310)
-            frm.StartPosition = FormStartPosition.CenterScreen
-            frm.FormBorderStyle = FormBorderStyle.FixedDialog
-            frm.MaximizeBox = False
-            frm.MinimizeBox = False
-            frm.Font = New Font("Segoe UI", 10)
+            Dim clrBanner As System.Drawing.Color = System.Drawing.Color.FromArgb(0, 122, 204)
+            Dim clrBg As System.Drawing.Color = System.Drawing.Color.FromArgb(245, 248, 252)
+            Dim clrBtn As System.Drawing.Color = System.Drawing.Color.White
+            Dim clrBtnHover As System.Drawing.Color = System.Drawing.Color.FromArgb(217, 236, 255)
+            Dim clrBtnDown As System.Drawing.Color = System.Drawing.Color.FromArgb(180, 215, 250)
+            Dim clrBorder As System.Drawing.Color = System.Drawing.Color.FromArgb(200, 212, 224)
+            Dim clrText As System.Drawing.Color = System.Drawing.Color.FromArgb(30, 30, 30)
+            Dim clrTextDim As System.Drawing.Color = System.Drawing.Color.FromArgb(110, 118, 128)
 
-            Dim lbl As New Label()
-            lbl.Text = "Chọn chế độ thay thế:"
-            lbl.Location = New System.Drawing.Point(20, 15)
-            lbl.AutoSize = True
-            frm.Controls.Add(lbl)
+            Dim titles() As String = {
+        "Replace All Select",
+        "Replace Component Select",
+        "Replace Multi Component Select",
+        "Replace All Multi Component Select"
+    }
+            Dim descs() As String = {
+        "Thay tất cả instance đang dùng cùng 1 file gốc",
+        "Chỉ thay đúng 1 component được chọn",
+        "Chọn nhiều component — mỗi cái chỉ thay chính nó",
+        "Chọn nhiều loại — mỗi loại thay tất cả instance của nó"
+    }
 
-            Dim lst As New ListBox()
-            lst.Location = New System.Drawing.Point(20, 45)
-            lst.Size = New Size(400, 150)
-            lst.Font = New Font("Segoe UI", 10.5F)
-            lst.Items.Add("1. Replace All        - Thay tất cả instance cùng 1 file")
-            lst.Items.Add("2. Replace 1          - Chỉ thay đúng 1 component")
-            lst.Items.Add("3. Replace Nhiều      - Chọn nhiều, mỗi cái chỉ thay chính nó")
-            lst.Items.Add("4. Replace All Multi  - Chọn nhiều loại → mỗi loại Replace All")
-            lst.SelectedIndex = 0
-            frm.Controls.Add(lst)
+            Dim selectedIndex As Integer = -1
+            Dim hoverIndex As Integer = -1
 
-            Dim btnOK As New Button()
-            btnOK.Text = "OK"
-            btnOK.Size = New Size(100, 32)
-            btnOK.Location = New System.Drawing.Point(210, 215)
-            btnOK.DialogResult = DialogResult.OK
-            frm.Controls.Add(btnOK)
+            '--- Pre-create font + pen + brush (1 lần, tránh GDI+ leak) ---
+            Using fTitle As New Font("Segoe UI", 10.5F, FontStyle.Bold)
+                Using fDesc As New Font("Segoe UI", 8.8F, FontStyle.Regular)
+                    Using penNormal As New Pen(clrBorder, 1.0F)
+                        Using penHover As New Pen(clrBanner, 2.0F)
+                            Using brBgNormal As New SolidBrush(clrBtn)
+                                Using brBgHover As New SolidBrush(clrBtnHover)
+                                    Using brAccent As New SolidBrush(clrBanner)
 
-            Dim btnCancel As New Button()
-            btnCancel.Text = "Hủy"
-            btnCancel.Size = New Size(100, 32)
-            btnCancel.Location = New System.Drawing.Point(320, 215)
-            btnCancel.DialogResult = DialogResult.Cancel
-            frm.Controls.Add(btnCancel)
+                                        Using frm As New Form()
+                                            frm.Text = "Replace Component"
+                                            frm.Size = New Size(560, 540)
+                                            frm.StartPosition = FormStartPosition.CenterScreen
+                                            frm.FormBorderStyle = FormBorderStyle.FixedDialog
+                                            frm.MaximizeBox = False
+                                            frm.MinimizeBox = False
+                                            frm.Font = New Font("Segoe UI", 9.5F)
+                                            frm.BackColor = clrBg
 
-            frm.AcceptButton = btnOK
-            frm.CancelButton = btnCancel
+                                            '--- Banner ---
+                                            Dim banner As New Label() With {
+                                        .Text = "🔁   REPLACE COMPONENT",
+                                        .Dock = DockStyle.Top,
+                                        .Height = 52,
+                                        .TextAlign = ContentAlignment.MiddleCenter,
+                                        .Font = New Font("Segoe UI", 12.5F, FontStyle.Bold),
+                                        .BackColor = clrBanner,
+                                        .ForeColor = System.Drawing.Color.White
+                                    }
+                                            frm.Controls.Add(banner)
 
-            Dim result As DialogResult = frm.ShowDialog()
-            If result <> DialogResult.OK Then Return 0
-            Return lst.SelectedIndex + 1
+                                            '--- Label hướng dẫn ---
+                                            Dim lblGuide As New Label() With {
+                                        .Text = "Click chọn chế độ thay thế:",
+                                        .Left = 20, .Top = 64, .AutoSize = True,
+                                        .Font = New Font("Segoe UI", 10.0F, FontStyle.Bold),
+                                        .ForeColor = clrText
+                                    }
+                                            frm.Controls.Add(lblGuide)
+
+                                            '--- 4 nút cứng ---
+                                            Dim btnW As Integer = 500
+                                            Dim btnH As Integer = 68
+                                            Dim btnGap As Integer = 8
+                                            Dim top0 As Integer = 92
+
+                                            For i As Integer = 0 To 3
+                                                Dim idx As Integer = i
+
+                                                Dim b As New Button() With {
+                                            .Left = 20,
+                                            .Top = top0 + i * (btnH + btnGap),
+                                            .Width = btnW,
+                                            .Height = btnH,
+                                            .BackColor = clrBtn,
+                                            .FlatStyle = FlatStyle.Flat,
+                                            .Cursor = Cursors.Hand,
+                                            .Text = ""
+                                        }
+                                                b.FlatAppearance.BorderSize = 0     ' viền tự vẽ trong Paint
+
+                                                ' --- Hover tracking ---
+                                                AddHandler b.MouseEnter,
+                                            Sub()
+                                                hoverIndex = idx
+                                                b.Invalidate()
+                                            End Sub
+                                                AddHandler b.MouseLeave,
+                                            Sub()
+                                                If hoverIndex = idx Then hoverIndex = -1
+                                                b.Invalidate()
+                                            End Sub
+
+                                                ' --- Paint: vẽ viền + accent bar + text ---
+                                                AddHandler b.Paint,
+                                            Sub(s, e)
+                                                Dim g = e.Graphics
+                                                Dim isHover As Boolean = (hoverIndex = idx)
+
+                                                ' 1) Nền
+                                                g.FillRectangle(If(isHover, brBgHover, brBgNormal), b.ClientRectangle)
+
+                                                ' 2) Viền
+                                                If isHover Then
+                                                    g.DrawRectangle(penHover, 0, 0, b.Width - 1, b.Height - 1)
+                                                Else
+                                                    g.DrawRectangle(penNormal, 0, 0, b.Width - 1, b.Height - 1)
+                                                End If
+
+                                                ' 3) Thanh accent trái khi hover
+                                                If isHover Then
+                                                    g.FillRectangle(brAccent, 0, 0, 4, b.Height)
+                                                End If
+
+                                                ' 4) Tiêu đề (đổi màu xanh khi hover)
+                                                Dim titleColor As System.Drawing.Color = If(isHover, clrBanner, clrText)
+                                                Dim rTitle As New Rectangle(22, 10, b.Width - 40, 24)
+                                                TextRenderer.DrawText(g,
+                                                    (idx + 1).ToString() & ".  " & titles(idx),
+                                                    fTitle, rTitle, titleColor,
+                                                    TextFormatFlags.Left Or TextFormatFlags.VerticalCenter)
+
+                                                ' 5) Mô tả
+                                                Dim rDesc As New Rectangle(22, 36, b.Width - 40, 22)
+                                                TextRenderer.DrawText(g, descs(idx),
+                                                    fDesc, rDesc, clrTextDim,
+                                                    TextFormatFlags.Left Or TextFormatFlags.VerticalCenter)
+
+                                                ' 6) Mũi tên › bên phải khi hover
+                                                If isHover Then
+                                                    Using fArrow As New Font("Segoe UI", 16.0F, FontStyle.Bold)
+                                                        Dim rArrow As New Rectangle(b.Width - 36, 0, 26, b.Height)
+                                                        TextRenderer.DrawText(g, "›", fArrow, rArrow, clrBanner,
+                                                            TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter)
+                                                    End Using
+                                                End If
+                                            End Sub
+
+                                                ' --- Click: chọn & đóng ---
+                                                AddHandler b.Click,
+                                            Sub()
+                                                selectedIndex = idx
+                                                frm.DialogResult = DialogResult.OK
+                                                frm.Close()
+                                            End Sub
+
+                                                frm.Controls.Add(b)
+                                            Next
+
+                                            '--- Nút Hủy ---
+                                            Dim btnCancel As New Button() With {
+                                        .Text = "Hủy",
+                                        .Left = 420, .Top = 440, .Width = 100, .Height = 36,
+                                        .BackColor = System.Drawing.Color.FromArgb(230, 70, 70),
+                                        .ForeColor = System.Drawing.Color.White,
+                                        .FlatStyle = FlatStyle.Flat,
+                                        .Font = New Font("Segoe UI", 10.0F, FontStyle.Bold),
+                                        .Cursor = Cursors.Hand,
+                                        .DialogResult = DialogResult.Cancel
+                                    }
+                                            btnCancel.FlatAppearance.BorderSize = 0
+                                            AddHandler btnCancel.MouseEnter, Sub() btnCancel.BackColor = System.Drawing.Color.FromArgb(210, 55, 55)
+                                            AddHandler btnCancel.MouseLeave, Sub() btnCancel.BackColor = System.Drawing.Color.FromArgb(230, 70, 70)
+                                            frm.Controls.Add(btnCancel)
+
+                                            frm.CancelButton = btnCancel
+
+                                            ' Reset hover khi form không còn focus (tránh treo highlight)
+                                            AddHandler frm.Deactivate,
+                                        Sub()
+                                            hoverIndex = -1
+                                            For Each c As Control In frm.Controls
+                                                If TypeOf c Is Button Then c.Invalidate()
+                                            Next
+                                        End Sub
+
+                                            Dim result As DialogResult = frm.ShowDialog()
+                                            If result <> DialogResult.OK Then Return 0
+                                            If selectedIndex < 0 Then Return 0
+                                            Return selectedIndex + 1
+
+                                        End Using
+                                    End Using
+                                End Using
+                            End Using
+                        End Using
+                    End Using
+                End Using
+            End Using
         End Function
-
     End Module
 End Namespace
